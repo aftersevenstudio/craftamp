@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import Link from 'next/link'
 
@@ -14,13 +15,19 @@ export default async function StudioDashboardPage() {
     redirect('/login')
   }
 
-  const { data: userRecord } = await supabase
+  const admin = createAdminClient()
+
+  const { data: userRecord } = await admin
     .from('users')
-    .select('*, studios(*)')
+    .select('studio_id')
     .eq('id', user.id)
     .single()
 
-  const studioName = (userRecord as any)?.studios?.name ?? 'Your Studio'
+  const { data: studio } = userRecord?.studio_id
+    ? await admin.from('studios').select('name').eq('id', userRecord.studio_id).single()
+    : { data: null }
+
+  const studioName = studio?.name ?? 'Your Studio'
 
   return (
     <div className='min-h-screen bg-gray-50'>

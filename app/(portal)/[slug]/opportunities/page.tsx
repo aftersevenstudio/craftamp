@@ -1,4 +1,4 @@
-export default function PortalOpportunitiesPage({ params }: { params: { slug: string } }) {
+export default function PortalOpportunitiesPage({ params }: { params: Promise<{ slug: string }> }) {
   return (
     <div className='min-h-screen bg-gray-50 p-8'>
       <h1 className='text-2xl font-bold text-gray-900'>Opportunities</h1>

@@ -28,6 +28,18 @@ export interface Client {
   timezone: string
   ga4_property_id: string | null
   gbp_location_id: string | null
+  contact_name: string | null
+  contact_email: string | null
+  created_at: string
+}
+
+export interface Invitation {
+  id: string
+  client_id: string
+  email: string
+  token: string
+  expires_at: string
+  accepted_at: string | null
   created_at: string
 }
 

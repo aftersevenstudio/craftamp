@@ -1,7 +1,17 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npx:*)"
+      "Bash(npx:*)",
+      "Bash(curl -s http://localhost:3000/studio/dashboard)",
+      "Bash(curl -sv http://localhost:3000/studio/dashboard)",
+      "Bash(pkill -f \"next dev\")",
+      "Bash(grep -n \"params\" /Users/patrickgaston/a7_codebase/craftamp/app/\\\\\\(portal\\\\\\)/[slug]/overview/page.tsx)",
+      "Bash(grep -n \"params\" /Users/patrickgaston/a7_codebase/craftamp/app/\\\\\\(portal\\\\\\)/[slug]/reports/page.tsx)",
+      "Bash(grep -n \"params\" /Users/patrickgaston/a7_codebase/craftamp/app/\\\\\\(portal\\\\\\)/[slug]/opportunities/page.tsx)",
+      "Bash(for f:*)",
+      "Bash(do)",
+      "Bash(sed -i '' 's/{ params }: { params: { slug: string } }/{ params }: { params: Promise<{ slug: string }> }/g' \"$f\")",
+      "Bash(done)"
     ]
   }
 }
