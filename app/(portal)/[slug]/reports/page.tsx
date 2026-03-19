@@ -83,7 +83,7 @@ export default async function PortalReportsPage({ params, searchParams }: Props)
               <Link
                 key={report.id}
                 href={`/${slug}/reports?id=${report.id}`}
-                className={`px-3 py-1.5 mb-2 rounded-full text-sm font-medium border transition-colors ${
+                className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
                   isActive
                     ? 'bg-gray-900 text-white border-gray-900'
                     : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'

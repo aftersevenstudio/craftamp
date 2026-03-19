@@ -4,18 +4,9 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 
 const schema = z.object({
-  business_name: z.string().min(1).optional(),
-  business_type: z.string().optional(),
-  city: z.string().optional(),
+  title: z.string().min(1),
+  type: z.string().min(1),
   description: z.string().optional(),
-  primary_goal: z.string().optional(),
-  target_audience: z.string().optional(),
-  timezone: z.string().optional(),
-  contact_name: z.string().optional(),
-  contact_email: z.string().email().optional(),
-  contact_phone: z.string().optional(),
-  ga4_property_id: z.string().optional(),
-  gbp_location_id: z.string().optional(),
 })
 
 async function getStudioId(userId: string) {
@@ -41,19 +32,16 @@ export async function GET(
   if (!studioId) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const admin = createAdminClient()
-  const { data: client } = await admin
-    .from('clients')
+  const { data: opportunities } = await admin
+    .from('opportunities')
     .select('*')
-    .eq('id', id)
-    .eq('studio_id', studioId)
-    .single()
+    .eq('client_id', id)
+    .order('created_at', { ascending: false })
 
-  if (!client) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-
-  return NextResponse.json({ client })
+  return NextResponse.json({ opportunities: opportunities ?? [] })
 }
 
-export async function PATCH(
+export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -73,24 +61,29 @@ export async function PATCH(
 
   const admin = createAdminClient()
 
-  // Verify ownership
-  const { data: existing } = await admin
+  // Verify client belongs to this studio
+  const { data: client } = await admin
     .from('clients')
     .select('id')
     .eq('id', id)
     .eq('studio_id', studioId)
     .single()
 
-  if (!existing) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  if (!client) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-  const { data: client, error } = await admin
-    .from('clients')
-    .update(parsed.data)
-    .eq('id', id)
+  const { data: opportunity, error } = await admin
+    .from('opportunities')
+    .insert({
+      client_id: id,
+      title: parsed.data.title,
+      type: parsed.data.type,
+      description: parsed.data.description ?? null,
+      status: 'open',
+    })
     .select('*')
     .single()
 
-  if (error) return NextResponse.json({ error: 'Failed to update client.' }, { status: 500 })
+  if (error) return NextResponse.json({ error: 'Failed to create opportunity.' }, { status: 500 })
 
-  return NextResponse.json({ client })
+  return NextResponse.json({ opportunity })
 }

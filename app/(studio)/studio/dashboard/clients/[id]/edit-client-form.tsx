@@ -49,6 +49,7 @@ export default function EditClientForm({ client }: { client: Client }) {
   const [timezone, setTimezone] = useState(client.timezone)
   const [contactName, setContactName] = useState(client.contact_name ?? '')
   const [contactEmail, setContactEmail] = useState(client.contact_email ?? '')
+  const [contactPhone, setContactPhone] = useState(client.contact_phone ?? '')
   const [ga4PropertyId, setGa4PropertyId] = useState(client.ga4_property_id ?? '')
   const [error, setError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
@@ -73,6 +74,7 @@ export default function EditClientForm({ client }: { client: Client }) {
         timezone,
         contact_name: contactName,
         contact_email: contactEmail,
+        contact_phone: contactPhone || null,
         ga4_property_id: ga4PropertyId || null,
       }),
     })
@@ -210,6 +212,17 @@ export default function EditClientForm({ client }: { client: Client }) {
                   onChange={(e) => setContactEmail(e.target.value)}
                 />
               </div>
+            </div>
+            <div className='space-y-2'>
+              <Label htmlFor='contactPhone'>Phone number</Label>
+              <Input
+                id='contactPhone'
+                type='tel'
+                value={contactPhone}
+                placeholder='+1 555 000 0000'
+                onChange={(e) => setContactPhone(e.target.value)}
+              />
+              <p className='text-xs text-gray-400'>E.164 format (e.g. +15550001234). Optional — for your records.</p>
             </div>
           </fieldset>
 

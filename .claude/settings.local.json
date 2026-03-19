@@ -15,7 +15,9 @@
       "Bash(ls:*)",
       "Bash(npm install:*)",
       "Bash(mkdir -p /Users/patrickgaston/a7_codebase/craftamp/app/api/clients/[id])",
-      "Bash(mkdir -p /Users/patrickgaston/a7_codebase/craftamp/app/\\\\\\(studio\\\\\\)/studio/dashboard/clients/[id])"
+      "Bash(mkdir -p /Users/patrickgaston/a7_codebase/craftamp/app/\\\\\\(studio\\\\\\)/studio/dashboard/clients/[id])",
+      "Bash(brew install:*)",
+      "Bash(ngrok config:*)"
     ]
   }
 }

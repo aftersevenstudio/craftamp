@@ -34,6 +34,8 @@ export interface Client {
   gbp_location_id: string | null
   contact_name: string | null
   contact_email: string | null
+  contact_phone: string | null
+  sms_consent: boolean
   created_at: string
 }
 
@@ -74,6 +76,23 @@ export interface ReportSection {
   raw_data: Record<string, unknown> | null
   display_order: number
   created_at: string
+}
+
+export interface WeeklyPulse {
+  id: string
+  client_id: string
+  week_start: string
+  leads_count: number | null
+  lead_source: string | null
+  marketing_activity: string | null
+  blockers: string | null
+  summary: string | null
+  recommendation: string | null
+  status: 'in_progress' | 'completed'
+  check_in_token: string | null
+  token_expires_at: string | null
+  created_at: string
+  completed_at: string | null
 }
 
 export interface Opportunity {

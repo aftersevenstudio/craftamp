@@ -4,6 +4,8 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { Badge } from '@/components/ui/badge'
 import EditClientForm from './edit-client-form'
+import OpportunitiesPanel from './opportunities-panel'
+import PulsePanel from './pulse-panel'
 
 interface Props {
   params: Promise<{ id: string }>
@@ -44,6 +46,21 @@ export default async function ClientSettingsPage({ params, searchParams }: Props
     .single()
 
   const isGAConnected = !!gaIntegration
+
+  const { data: opportunities } = await admin
+    .from('opportunities')
+    .select('*')
+    .eq('client_id', id)
+    .order('created_at', { ascending: false })
+
+  const { data: latestPulse } = await admin
+    .from('weekly_pulses')
+    .select('*')
+    .eq('client_id', id)
+    .order('week_start', { ascending: false })
+    .limit(1)
+    .single()
+
   const returnTo = `/studio/dashboard/clients/${id}`
 
   return (
@@ -125,6 +142,19 @@ export default async function ClientSettingsPage({ params, searchParams }: Props
             </div>
           </div>
         </div>
+
+        {/* Weekly Pulse */}
+        <PulsePanel
+          clientId={id}
+          hasEmail={!!client.contact_email}
+          latestPulse={latestPulse ?? null}
+        />
+
+        {/* Opportunities */}
+        <OpportunitiesPanel
+          clientId={id}
+          initialOpportunities={opportunities ?? []}
+        />
 
       </main>
     </div>

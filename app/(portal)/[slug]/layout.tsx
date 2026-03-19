@@ -42,6 +42,7 @@ export default async function PortalLayout({ children, params }: Props) {
     { href: `/${slug}/overview`, label: 'Overview' },
     { href: `/${slug}/reports`, label: 'Reports' },
     { href: `/${slug}/opportunities`, label: 'Opportunities' },
+    { href: `/${slug}/pulse`, label: 'Pulse' },
   ]
 
   return (
