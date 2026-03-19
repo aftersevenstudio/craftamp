@@ -5,10 +5,29 @@ import { useState } from 'react'
 export default function EarlyAccessForm() {
   const [email, setEmail] = useState('')
   const [submitted, setSubmitted] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (email.trim()) setSubmitted(true)
+    setLoading(true)
+    setError(null)
+
+    const res = await fetch('/api/waitlist', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    })
+
+    if (!res.ok) {
+      const json = await res.json()
+      setError(json.error ?? 'Something went wrong.')
+      setLoading(false)
+      return
+    }
+
+    setSubmitted(true)
+    setLoading(false)
   }
 
   if (submitted) {
@@ -28,14 +47,17 @@ export default function EarlyAccessForm() {
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         placeholder='you@youragency.com'
-        className='w-full sm:w-72 px-4 py-3 rounded-lg bg-[#1F1F1E] border border-[#2E2E2C] text-[#F8F8F7] placeholder-[#A0A09E] text-sm focus:outline-none focus:ring-2 focus:ring-[#5046E4] focus:border-transparent'
+        disabled={loading}
+        className='w-full sm:w-72 px-4 py-3 rounded-lg bg-[#1F1F1E] border border-[#2E2E2C] text-[#F8F8F7] placeholder-[#A0A09E] text-sm focus:outline-none focus:ring-2 focus:ring-[#5046E4] focus:border-transparent disabled:opacity-50'
       />
       <button
         type='submit'
-        className='px-6 py-3 rounded-lg bg-[#5046E4] text-white text-sm font-semibold hover:bg-[#4038c7] transition-colors whitespace-nowrap'
+        disabled={loading}
+        className='px-6 py-3 rounded-lg bg-[#5046E4] text-white text-sm font-semibold hover:bg-[#4038c7] transition-colors whitespace-nowrap disabled:opacity-50'
       >
-        Request early access
+        {loading ? 'Saving…' : 'Request early access'}
       </button>
+      {error && <p className='text-red-400 text-xs mt-1 text-center w-full'>{error}</p>}
     </form>
   )
 }
