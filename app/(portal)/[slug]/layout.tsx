@@ -52,7 +52,7 @@ export default async function PortalLayout({ children, params }: Props) {
             {/* Studio name / logo */}
             <div className='flex items-center gap-2'>
               {studio.logo_url ? (
-                <img src={studio.logo_url} alt={studio.name} className='h-6 w-auto' />
+                <img src={studio.logo_url} alt={studio.name} className='h-8 w-auto max-w-[180px] object-contain' />
               ) : (
                 <span
                   className='text-sm font-bold tracking-tight'

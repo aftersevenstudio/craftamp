@@ -67,6 +67,17 @@ export default async function StudioDashboardPage() {
               </CardContent>
             </Card>
           </Link>
+
+          <Link href='/studio/dashboard/settings'>
+            <Card className='hover:shadow-md transition-shadow cursor-pointer'>
+              <CardHeader>
+                <CardTitle>Settings</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className='text-sm text-gray-500'>Upload your logo and configure your studio's branding.</p>
+              </CardContent>
+            </Card>
+          </Link>
         </div>
       </main>
     </div>
