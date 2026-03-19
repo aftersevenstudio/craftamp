@@ -74,7 +74,9 @@ export default async function ReportsPage() {
                       <p className='font-medium text-gray-900'>
                         {clientMap.get(report.client_id) ?? 'Unknown client'}
                       </p>
-                      <p className='text-sm text-gray-500'>{report.period_month}</p>
+                      <p className='text-sm text-gray-500'>
+                        {new Date(report.period_month + '-02').toLocaleString('en-US', { month: 'long', year: 'numeric' })}
+                      </p>
                     </div>
                     <div className='flex items-center gap-3'>
                       {report.status === 'draft' && (

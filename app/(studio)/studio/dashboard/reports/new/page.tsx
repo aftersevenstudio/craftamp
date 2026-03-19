@@ -245,7 +245,9 @@ export default function NewReportPage() {
                 <Label htmlFor='client'>Client</Label>
                 <Select value={clientId} onValueChange={(v) => setClientId(v ?? '')}>
                   <SelectTrigger id='client'>
-                    <SelectValue placeholder='Select a client…' />
+                    <SelectValue placeholder='Select a client…'>
+                      {clients.find((c) => c.id === clientId)?.business_name ?? 'Select a client…'}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {clients.map((c) => (
