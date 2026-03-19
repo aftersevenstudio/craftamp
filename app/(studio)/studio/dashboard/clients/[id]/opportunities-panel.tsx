@@ -48,6 +48,9 @@ interface Opportunity {
   type: string
   description: string | null
   status: string
+  source?: string | null
+  cta_label?: string | null
+  expires_at?: string | null
   created_at: string
 }
 
@@ -93,7 +96,8 @@ export default function OpportunitiesPanel({ clientId, initialOpportunities }: P
     router.refresh()
   }
 
-  async function handleStatusChange(id: string, status: string) {
+  async function handleStatusChange(id: string, status: string | null) {
+    if (!status) return
     await fetch(`/api/opportunities/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -186,7 +190,7 @@ export default function OpportunitiesPanel({ clientId, initialOpportunities }: P
                 )}
               </div>
               <div className='flex items-center gap-2 shrink-0'>
-                <Select value={opp.status} onValueChange={(v) => handleStatusChange(opp.id, v)}>
+                <Select value={opp.status ?? 'open'} onValueChange={(v) => handleStatusChange(opp.id as string, v)}>
                   <SelectTrigger className='h-7 text-xs w-32'>
                     <SelectValue />
                   </SelectTrigger>
@@ -197,7 +201,7 @@ export default function OpportunitiesPanel({ clientId, initialOpportunities }: P
                   </SelectContent>
                 </Select>
                 <button
-                  onClick={() => handleDelete(opp.id)}
+                  onClick={() => handleDelete(opp.id as string)}
                   className='text-xs text-gray-300 hover:text-red-500 transition-colors'
                 >
                   ✕
