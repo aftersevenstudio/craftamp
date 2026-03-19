@@ -4,9 +4,10 @@ interface InviteEmailProps {
   brandColor: string | null
   logoUrl: string | null
   inviteUrl: string
+  portalUrl: string
 }
 
-export function inviteEmail({ contactName, studioName, brandColor, logoUrl, inviteUrl }: InviteEmailProps): string {
+export function inviteEmail({ contactName, studioName, brandColor, logoUrl, inviteUrl, portalUrl }: InviteEmailProps): string {
   const accent = brandColor ?? '#6366f1'
 
   const logoHtml = logoUrl
@@ -60,6 +61,9 @@ export function inviteEmail({ contactName, studioName, brandColor, logoUrl, invi
 
               <p style="margin:28px 0 0;font-size:13px;color:#9ca3af;line-height:1.5;">
                 This link expires in 7 days. If you weren't expecting this invitation, you can safely ignore this email.
+              </p>
+              <p style="margin:16px 0 0;font-size:13px;color:#9ca3af;line-height:1.5;">
+                Once you've set up your account, you can always return to your portal at <a href="${portalUrl}" style="color:#6b7280;">${portalUrl}</a>.
               </p>
             </td>
           </tr>

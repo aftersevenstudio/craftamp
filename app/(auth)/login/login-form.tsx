@@ -72,12 +72,85 @@ export default function LoginForm({ studio }: Props) {
     router.refresh()
   }
 
+  if (!studio) {
+    // Default Craftamp login — dark branded
+    return (
+      <div
+        className='min-h-screen flex items-center justify-center px-4 antialiased'
+        style={{ background: '#0f0f0f' }}
+      >
+        <div className='w-full max-w-sm'>
+          <div className='mb-8 text-center'>
+            <Image
+              src='/images/craftamp-dark.svg'
+              alt='Craftamp'
+              width={160}
+              height={33}
+              priority
+              className='h-9 w-auto mx-auto mb-3'
+            />
+            <p className='text-sm' style={{ color: '#A0A09E' }}>Sign in to your studio</p>
+          </div>
+
+          <div
+            className='rounded-2xl p-6 space-y-4'
+            style={{ background: '#1F1F1E', border: '1px solid #2E2E2C' }}
+          >
+            <form onSubmit={handleLogin} className='space-y-4'>
+              <div className='space-y-1.5'>
+                <label htmlFor='email' className='text-sm font-medium' style={{ color: '#F8F8F7' }}>Email</label>
+                <Input
+                  id='email'
+                  type='email'
+                  placeholder='you@example.com'
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className='bg-transparent border-[#3a3a38] text-[#F8F8F7] placeholder:text-[#6b6b68]'
+                />
+              </div>
+              <div className='space-y-1.5'>
+                <label htmlFor='password' className='text-sm font-medium' style={{ color: '#F8F8F7' }}>Password</label>
+                <Input
+                  id='password'
+                  type='password'
+                  placeholder='••••••••'
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  className='bg-transparent border-[#3a3a38] text-[#F8F8F7] placeholder:text-[#6b6b68]'
+                />
+              </div>
+              {error && <p className='text-sm text-red-400'>{error}</p>}
+              <button
+                type='submit'
+                disabled={loading}
+                className='w-full py-2.5 px-4 rounded-lg text-sm font-semibold text-white transition-opacity disabled:opacity-60'
+                style={{ backgroundColor: '#5046E4' }}
+              >
+                {loading ? 'Signing in…' : 'Sign in'}
+              </button>
+            </form>
+
+            <p className='text-center text-sm' style={{ color: '#6b6b68' }}>
+              No account?{' '}
+              <Link href='/signup' className='underline underline-offset-4' style={{ color: '#A0A09E' }}>
+                Create your studio
+              </Link>
+            </p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Branded client login
   return (
     <div className='min-h-screen flex items-center justify-center bg-gray-50 px-4'>
       <div className='w-full max-w-sm'>
-        {/* Branding */}
+        {/* Studio branding */}
         <div className='mb-8 text-center'>
-          {studio?.logo_url ? (
+          {studio.logo_url ? (
             <Image
               src={studio.logo_url}
               alt={studio.name}
@@ -90,13 +163,12 @@ export default function LoginForm({ studio }: Props) {
               className='text-xl font-bold tracking-tight mb-1'
               style={{ color: accentColor }}
             >
-              {studio?.name ?? 'Craftamp'}
+              {studio.name}
             </div>
           )}
           <p className='text-sm text-gray-500'>Sign in to your portal</p>
         </div>
 
-        {/* Form */}
         <div className='bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-4'>
           <form onSubmit={handleLogin} className='space-y-4'>
             <div className='space-y-1.5'>
@@ -131,22 +203,11 @@ export default function LoginForm({ studio }: Props) {
               {loading ? 'Signing in…' : 'Sign in'}
             </button>
           </form>
-
-          {!studio && (
-            <p className='text-center text-sm text-muted-foreground'>
-              No account?{' '}
-              <Link href='/signup' className='underline underline-offset-4 hover:text-primary'>
-                Create your studio
-              </Link>
-            </p>
-          )}
         </div>
 
-        {studio && (
-          <p className='mt-6 text-center text-xs text-gray-400'>
-            Powered by Craftamp
-          </p>
-        )}
+        <p className='mt-6 text-center text-xs text-gray-400'>
+          Powered by Craftamp
+        </p>
       </div>
     </div>
   )

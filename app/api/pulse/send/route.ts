@@ -93,7 +93,7 @@ export async function POST(request: Request) {
   const weekLabel = weekDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
 
   await resend.emails.send({
-    from: process.env.RESEND_FROM_EMAIL ?? 'hello@craftamp.com',
+    from: process.env.RESEND_FROM_EMAIL ?? 'no-reply@craftamp.com',
     to: client.contact_email,
     subject: `Weekly check-in for ${client.business_name}`,
     html: pulseCheckinEmail({

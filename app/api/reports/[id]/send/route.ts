@@ -66,7 +66,12 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
       year: 'numeric',
     })
 
-    const portalUrl = `${process.env.NEXT_PUBLIC_APP_URL}/${studio.slug}/reports`
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
+    const appHost = new URL(appUrl).hostname
+    const isLocalhost = appHost === 'localhost' || appHost.endsWith('.vercel.app')
+    const portalUrl = isLocalhost
+      ? `${appUrl}/${studio.slug}/reports`
+      : `https://${studio.slug}.craftamp.com/reports`
 
     await resend.emails.send({
       from: `${studio.name} <${process.env.RESEND_FROM_EMAIL ?? 'onboarding@resend.dev'}>`,
