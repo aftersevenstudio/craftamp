@@ -33,7 +33,7 @@ type PageState = 'idle' | 'generating' | 'done'
 const SECTION_ICONS: Record<string, string> = {
   executive_summary: '📋',
   website_performance: '📈',
-  local_presence: '📍',
+  local_presence: '🌐',
   recommendations: '🎯',
 }
 

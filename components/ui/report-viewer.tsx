@@ -11,14 +11,14 @@ interface Section {
 const SECTION_LABELS: Record<string, string> = {
   executive_summary: 'Executive Summary',
   website_performance: 'Website Performance',
-  local_presence: 'Local Presence',
+  local_presence: 'Local Opportunity',
   recommendations: 'Recommendations',
 }
 
 const SECTION_ICONS: Record<string, string> = {
   executive_summary: '📋',
   website_performance: '📈',
-  local_presence: '📍',
+  local_presence: '🌐',
   recommendations: '🎯',
 }
 

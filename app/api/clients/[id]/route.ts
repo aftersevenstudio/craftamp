@@ -6,6 +6,10 @@ import { createAdminClient } from '@/lib/supabase/admin'
 const schema = z.object({
   business_name: z.string().min(1).optional(),
   business_type: z.string().optional(),
+  city: z.string().optional(),
+  description: z.string().optional(),
+  primary_goal: z.string().optional(),
+  target_audience: z.string().optional(),
   timezone: z.string().optional(),
   contact_name: z.string().optional(),
   contact_email: z.string().email().optional(),

@@ -26,6 +26,10 @@ export interface Client {
   business_name: string
   business_type: string | null
   timezone: string
+  city: string | null
+  description: string | null
+  primary_goal: string | null
+  target_audience: string | null
   ga4_property_id: string | null
   gbp_location_id: string | null
   contact_name: string | null
