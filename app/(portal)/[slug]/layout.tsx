@@ -1,8 +1,20 @@
 import { redirect } from 'next/navigation'
+import { headers } from 'next/headers'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import SignOutButton from '@/components/ui/sign-out-button'
+
+const CRAFTAMP_DOMAIN = 'craftamp.com'
+
+function isStudioSubdomain(host: string): boolean {
+  const bare = host.split(':')[0].toLowerCase()
+  return (
+    bare.endsWith(`.${CRAFTAMP_DOMAIN}`) &&
+    bare !== `app.${CRAFTAMP_DOMAIN}` &&
+    !bare.endsWith('.vercel.app')
+  )
+}
 
 interface Props {
   children: React.ReactNode
@@ -13,6 +25,10 @@ export default async function PortalLayout({ children, params }: Props) {
   const { slug } = await params
   const supabase = await createClient()
   const admin = createAdminClient()
+  const headersList = await headers()
+  const host = headersList.get('host') ?? ''
+  const onSubdomain = isStudioSubdomain(host)
+  const basePath = onSubdomain ? '' : `/${slug}`
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
@@ -39,10 +55,10 @@ export default async function PortalLayout({ children, params }: Props) {
   const accent = studio.brand_color ?? '#6366f1'
 
   const navLinks = [
-    { href: `/${slug}/overview`, label: 'Overview' },
-    { href: `/${slug}/reports`, label: 'Reports' },
-    { href: `/${slug}/opportunities`, label: 'Opportunities' },
-    { href: `/${slug}/pulse`, label: 'Pulse' },
+    { href: `${basePath}/overview`, label: 'Overview' },
+    { href: `${basePath}/reports`, label: 'Reports' },
+    { href: `${basePath}/opportunities`, label: 'Opportunities' },
+    { href: `${basePath}/pulse`, label: 'Pulse' },
   ]
 
   return (
