@@ -5,6 +5,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
+import DeleteReportButton from './delete-report-button'
 
 export default async function ReportsPage() {
   const supabase = await createClient()
@@ -67,7 +68,7 @@ export default async function ReportsPage() {
           <div className='space-y-3'>
             {reports.map((report) => (
               <Link key={report.id} href={`/studio/dashboard/reports/${report.id}`}>
-                <Card className='hover:shadow-sm transition-shadow cursor-pointer'>
+                <Card className='hover:shadow-sm transition-shadow cursor-pointer mb-4'>
                   <CardContent className='py-4 flex items-center justify-between'>
                     <div>
                       <p className='font-medium text-gray-900'>
@@ -75,9 +76,14 @@ export default async function ReportsPage() {
                       </p>
                       <p className='text-sm text-gray-500'>{report.period_month}</p>
                     </div>
-                    <Badge variant={report.status === 'sent' ? 'default' : 'secondary'}>
-                      {report.status}
-                    </Badge>
+                    <div className='flex items-center gap-3'>
+                      {report.status === 'draft' && (
+                        <DeleteReportButton reportId={report.id} />
+                      )}
+                      <Badge variant={report.status === 'sent' ? 'default' : 'secondary'}>
+                        {report.status}
+                      </Badge>
+                    </div>
                   </CardContent>
                 </Card>
               </Link>

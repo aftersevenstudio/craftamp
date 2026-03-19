@@ -44,7 +44,7 @@ export default function ReportViewer({ sections, periodLabel, businessName }: Pr
               {SECTION_LABELS[section.section_type] ?? section.section_type}
             </CardTitle>
           </CardHeader>
-          <CardContent className='px-5 py-4'>
+          <CardContent className='px-5 py-2'>
             <div className='prose prose-sm prose-gray max-w-none'>
               <ReactMarkdown remarkPlugins={[remarkGfm]}>
                 {section.ai_content ?? ''}
