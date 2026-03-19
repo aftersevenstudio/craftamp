@@ -5,6 +5,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 
 const schema = z.object({
   brand_color: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Must be a valid hex color').optional(),
+  custom_domain: z.string().optional(),
 })
 
 export async function PATCH(request: Request) {

@@ -13,15 +13,20 @@ interface Props {
   studioName: string
   logoUrl: string | null
   brandColor: string | null
+  customDomain: string | null
 }
 
-export default function StudioSettingsForm({ studioId, studioName, logoUrl, brandColor }: Props) {
+export default function StudioSettingsForm({ studioId, studioName, logoUrl, brandColor, customDomain }: Props) {
   const router = useRouter()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [currentLogo, setCurrentLogo] = useState(logoUrl)
   const [preview, setPreview] = useState<string | null>(null)
   const [color, setColor] = useState(brandColor ?? '#6366f1')
+  const [domain, setDomain] = useState(customDomain ?? '')
+  const [savingDomain, setSavingDomain] = useState(false)
+  const [domainSaved, setDomainSaved] = useState(false)
+  const [domainError, setDomainError] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
   const [savingColor, setSavingColor] = useState(false)
   const [logoError, setLogoError] = useState<string | null>(null)
@@ -65,6 +70,30 @@ export default function StudioSettingsForm({ studioId, studioName, logoUrl, bran
     setCurrentLogo(null)
     setPreview(null)
     setUploading(false)
+    router.refresh()
+  }
+
+  async function handleDomainSave() {
+    setSavingDomain(true)
+    setDomainSaved(false)
+    setDomainError(null)
+
+    const cleaned = domain.trim().toLowerCase().replace(/^https?:\/\//, '')
+
+    const res = await fetch('/api/studio/settings', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ custom_domain: cleaned || null }),
+    })
+
+    if (!res.ok) {
+      const json = await res.json()
+      setDomainError(json.error ?? 'Failed to save.')
+    } else {
+      setDomain(cleaned)
+      setDomainSaved(true)
+    }
+    setSavingDomain(false)
     router.refresh()
   }
 
@@ -160,6 +189,57 @@ export default function StudioSettingsForm({ studioId, studioName, logoUrl, bran
             </Button>
             {colorSaved && <span className='text-sm text-green-600'>Saved.</span>}
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Custom domain */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Custom domain</CardTitle>
+          <CardDescription>
+            Give your clients a fully branded portal URL instead of craftamp.com/{'{'}slug{'}'}.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className='space-y-4'>
+          <div className='flex items-center gap-3'>
+            <Input
+              value={domain}
+              onChange={(e) => { setDomain(e.target.value); setDomainSaved(false) }}
+              placeholder='portal.yourstudio.com'
+              className='max-w-xs font-mono text-sm'
+            />
+            <Button onClick={handleDomainSave} disabled={savingDomain} size='sm' variant='outline'>
+              {savingDomain ? 'Saving…' : 'Save domain'}
+            </Button>
+            {domainSaved && <span className='text-sm text-green-600'>Saved.</span>}
+          </div>
+          {domainError && <p className='text-sm text-red-600'>{domainError}</p>}
+
+          {domain && !window.location.hostname.includes('localhost') && (
+            <div className='rounded-lg border bg-gray-50 p-4 space-y-3 text-sm'>
+              <p className='font-medium text-gray-700'>DNS setup instructions</p>
+              <p className='text-gray-500'>Add the following CNAME record with your DNS provider:</p>
+              <div className='overflow-x-auto rounded border bg-white'>
+                <table className='w-full text-xs font-mono'>
+                  <thead>
+                    <tr className='border-b bg-gray-50'>
+                      <th className='px-3 py-2 text-left text-gray-500 font-medium'>Type</th>
+                      <th className='px-3 py-2 text-left text-gray-500 font-medium'>Name</th>
+                      <th className='px-3 py-2 text-left text-gray-500 font-medium'>Value</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td className='px-3 py-2 text-gray-900'>CNAME</td>
+                      <td className='px-3 py-2 text-gray-900'>{domain.split('.').slice(0, -2).join('.') || '@'}</td>
+                      <td className='px-3 py-2 text-gray-900'>{process.env.NEXT_PUBLIC_APP_URL?.replace(/^https?:\/\//, '') ?? 'craftamp.com'}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <p className='text-gray-400 text-xs'>DNS changes can take up to 48 hours to propagate. If deploying on Vercel, also add this domain in your Vercel project settings.</p>
+            </div>
+          )}
         </CardContent>
       </Card>
 

@@ -129,7 +129,7 @@ export async function POST(request: Request) {
     from: `Craftamp <${process.env.RESEND_FROM_EMAIL ?? 'onboarding@resend.dev'}>`,
     to: contactEmail,
     subject: `You've been invited to ${studio.name}'s client portal`,
-    html: inviteEmail({ contactName, studioName: studio.name, brandColor: studio.brand_color, inviteUrl }),
+    html: inviteEmail({ contactName, studioName: studio.name, brandColor: studio.brand_color, logoUrl: studio.logo_url, inviteUrl }),
   })
 
   if (emailError) {

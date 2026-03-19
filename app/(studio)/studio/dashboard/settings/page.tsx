@@ -23,7 +23,7 @@ export default async function SettingsPage() {
 
   const { data: studio } = await admin
     .from('studios')
-    .select('id, name, logo_url, brand_color')
+    .select('id, name, logo_url, brand_color, custom_domain')
     .eq('id', userRecord.studio_id)
     .single()
 
@@ -48,6 +48,7 @@ export default async function SettingsPage() {
           studioName={studio.name}
           logoUrl={studio.logo_url}
           brandColor={studio.brand_color}
+          customDomain={studio.custom_domain}
         />
       </main>
     </div>

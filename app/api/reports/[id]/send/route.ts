@@ -42,7 +42,7 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
       .single(),
     admin
       .from('studios')
-      .select('slug, name, brand_color')
+      .select('slug, name, brand_color, logo_url')
       .eq('id', userRecord.studio_id)
       .single(),
   ])
@@ -76,6 +76,7 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
         contactName: client.contact_name ?? 'there',
         studioName: studio.name,
         brandColor: studio.brand_color,
+        logoUrl: studio.logo_url,
         businessName: client.business_name,
         periodLabel,
         portalUrl,

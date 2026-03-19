@@ -2,11 +2,19 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 
 interface Props {
   params: Promise<{ slug: string }>
+}
+
+function formatPeriod(periodMonth: string) {
+  const [year, month] = periodMonth.split('-')
+  return new Date(Number(year), Number(month) - 1).toLocaleString('en-US', {
+    month: 'long',
+    year: 'numeric',
+  })
 }
 
 export default async function PortalOverviewPage({ params }: Props) {
@@ -17,131 +25,148 @@ export default async function PortalOverviewPage({ params }: Props) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: userRecord } = await admin
-    .from('users')
-    .select('client_id')
-    .eq('id', user.id)
-    .single()
+  const [{ data: userRecord }, { data: studio }] = await Promise.all([
+    admin.from('users').select('client_id').eq('id', user.id).single(),
+    admin.from('studios').select('name, brand_color').eq('slug', slug).single(),
+  ])
 
   const clientId = userRecord?.client_id
+  const accent = studio?.brand_color ?? '#6366f1'
 
-  const [
-    { data: client },
-    { data: reports },
-    { data: opportunities },
-  ] = await Promise.all([
+  const [{ data: client }, { data: reports }, { data: opportunities }] = await Promise.all([
     clientId
-      ? admin.from('clients').select('business_name, business_type').eq('id', clientId).single()
+      ? admin.from('clients').select('business_name, business_type, contact_name').eq('id', clientId).single()
       : Promise.resolve({ data: null }),
     clientId
-      ? admin.from('reports').select('id, status, period_month, sent_at').eq('client_id', clientId).order('created_at', { ascending: false }).limit(5)
+      ? admin.from('reports').select('id, status, period_month, sent_at').eq('client_id', clientId).eq('status', 'sent').order('period_month', { ascending: false })
       : Promise.resolve({ data: [] }),
     clientId
-      ? admin.from('opportunities').select('id, title, type, status').eq('client_id', clientId).order('created_at', { ascending: false }).limit(5)
+      ? admin.from('opportunities').select('id, title, type, status').eq('client_id', clientId).eq('status', 'open').order('created_at', { ascending: false }).limit(3)
       : Promise.resolve({ data: [] }),
   ])
 
-  const sentReports = (reports ?? []).filter((r) => r.status === 'sent')
-  const openOpportunities = (opportunities ?? []).filter((o) => o.status === 'open')
+  const latestReport = reports?.[0] ?? null
+  const firstName = client?.contact_name?.split(' ')[0] ?? null
 
   return (
     <div className='space-y-8'>
-      {/* Welcome */}
-      <div>
-        <h1 className='text-2xl font-bold text-gray-900'>
-          {client?.business_name ?? 'Your Portal'}
-        </h1>
-        {client?.business_type && (
-          <p className='text-sm text-gray-500 mt-1'>{client.business_type}</p>
-        )}
+
+      {/* Welcome hero */}
+      <div className='rounded-xl overflow-hidden'>
+        <div className='px-6 py-8' style={{ background: `${accent}15` }}>
+          <p className='text-sm font-medium mb-1' style={{ color: accent }}>
+            Welcome back{firstName ? `, ${firstName}` : ''}
+          </p>
+          <h1 className='text-2xl font-bold text-gray-900'>
+            {client?.business_name ?? 'Your Portal'}
+          </h1>
+          {client?.business_type && (
+            <p className='text-sm text-gray-500 mt-1'>{client.business_type}</p>
+          )}
+        </div>
       </div>
 
-      {/* Stats */}
-      <div className='grid grid-cols-1 sm:grid-cols-3 gap-4'>
-        <Card>
-          <CardContent className='pt-6'>
-            <p className='text-3xl font-bold text-gray-900'>{sentReports.length}</p>
-            <p className='text-sm text-gray-500 mt-1'>Reports received</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className='pt-6'>
-            <p className='text-3xl font-bold text-gray-900'>{openOpportunities.length}</p>
-            <p className='text-sm text-gray-500 mt-1'>Open opportunities</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className='pt-6'>
-            <p className='text-3xl font-bold text-gray-900'>
-              {sentReports[0]
-                ? new Date(sentReports[0].sent_at!).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
-                : '—'}
+      {/* Latest report CTA — the most important thing */}
+      {latestReport ? (
+        <div className='rounded-xl border-2 p-6 flex items-center justify-between gap-4' style={{ borderColor: accent }}>
+          <div>
+            <p className='text-xs font-semibold uppercase tracking-wide mb-1' style={{ color: accent }}>
+              Latest report
             </p>
-            <p className='text-sm text-gray-500 mt-1'>Last report</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Recent reports */}
-      <div>
-        <div className='flex items-center justify-between mb-3'>
-          <h2 className='text-base font-semibold text-gray-900'>Recent reports</h2>
-          <Link href={`/${slug}/reports`} className='text-sm text-gray-500 hover:text-gray-700'>
-            View all →
+            <p className='text-lg font-bold text-gray-900'>{formatPeriod(latestReport.period_month)}</p>
+            <p className='text-sm text-gray-500 mt-0.5'>
+              Delivered {new Date(latestReport.sent_at!).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+            </p>
+          </div>
+          <Link
+            href={`/${slug}/reports`}
+            className='shrink-0 px-5 py-2.5 rounded-lg text-sm font-semibold text-white transition-opacity hover:opacity-90'
+            style={{ background: accent }}
+          >
+            View report →
           </Link>
         </div>
+      ) : (
+        <div className='rounded-xl border border-dashed p-8 text-center'>
+          <p className='text-gray-500 text-sm'>Your first report will appear here once it's ready.</p>
+        </div>
+      )}
 
-        {!sentReports.length ? (
-          <Card>
-            <CardContent className='py-10 text-center text-sm text-gray-400'>
-              No reports yet — your first one will appear here.
-            </CardContent>
-          </Card>
-        ) : (
+      {/* Stats row */}
+      <div className='grid grid-cols-3 gap-4'>
+        <Card>
+          <CardContent className='pt-5 pb-4'>
+            <p className='text-2xl font-bold text-gray-900'>{reports?.length ?? 0}</p>
+            <p className='text-xs text-gray-500 mt-1'>Reports delivered</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className='pt-5 pb-4'>
+            <p className='text-2xl font-bold text-gray-900'>{opportunities?.length ?? 0}</p>
+            <p className='text-xs text-gray-500 mt-1'>Open opportunities</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className='pt-5 pb-4'>
+            <p className='text-2xl font-bold text-gray-900'>
+              {latestReport ? formatPeriod(latestReport.period_month).split(' ')[0] : '—'}
+            </p>
+            <p className='text-xs text-gray-500 mt-1'>Latest period</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Report history */}
+      {(reports?.length ?? 0) > 1 && (
+        <div>
+          <div className='flex items-center justify-between mb-3'>
+            <h2 className='text-sm font-semibold text-gray-900'>Report history</h2>
+            <Link href={`/${slug}/reports`} className='text-xs text-gray-400 hover:text-gray-600'>
+              View all →
+            </Link>
+          </div>
           <div className='space-y-2'>
-            {sentReports.slice(0, 3).map((report) => (
-              <Card key={report.id}>
-                <CardContent className='py-3 flex items-center justify-between'>
-                  <span className='text-sm font-medium text-gray-800'>{report.period_month}</span>
-                  <Badge variant='default'>Delivered</Badge>
-                </CardContent>
-              </Card>
+            {reports!.slice(1, 4).map((report) => (
+              <Link key={report.id} href={`/${slug}/reports?id=${report.id}`}>
+                <Card className='hover:shadow-sm transition-shadow cursor-pointer mb-3'>
+                  <CardContent className='py-3 flex items-center justify-between'>
+                    <span className='text-sm text-gray-700'>{formatPeriod(report.period_month)}</span>
+                    <span className='text-xs text-gray-400'>
+                      {new Date(report.sent_at!).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    </span>
+                  </CardContent>
+                </Card>
+              </Link>
             ))}
           </div>
-        )}
-      </div>
-
-      {/* Recent opportunities */}
-      <div>
-        <div className='flex items-center justify-between mb-3'>
-          <h2 className='text-base font-semibold text-gray-900'>Opportunities</h2>
-          <Link href={`/${slug}/opportunities`} className='text-sm text-gray-500 hover:text-gray-700'>
-            View all →
-          </Link>
         </div>
+      )}
 
-        {!openOpportunities.length ? (
-          <Card>
-            <CardContent className='py-10 text-center text-sm text-gray-400'>
-              No open opportunities right now.
-            </CardContent>
-          </Card>
-        ) : (
+      {/* Opportunities */}
+      {(opportunities?.length ?? 0) > 0 && (
+        <div>
+          <div className='flex items-center justify-between mb-3'>
+            <h2 className='text-sm font-semibold text-gray-900'>Open opportunities</h2>
+            <Link href={`/${slug}/opportunities`} className='text-xs text-gray-400 hover:text-gray-600'>
+              View all →
+            </Link>
+          </div>
           <div className='space-y-2'>
-            {openOpportunities.slice(0, 3).map((opp) => (
+            {opportunities!.map((opp) => (
               <Card key={opp.id}>
                 <CardContent className='py-3 flex items-center justify-between'>
                   <div>
                     <p className='text-sm font-medium text-gray-800'>{opp.title}</p>
-                    <p className='text-xs text-gray-400 capitalize'>{opp.type}</p>
+                    <p className='text-xs text-gray-400 capitalize mt-0.5'>{opp.type}</p>
                   </div>
                   <Badge variant='secondary'>{opp.status}</Badge>
                 </CardContent>
               </Card>
             ))}
           </div>
-        )}
-      </div>
+        </div>
+      )}
+
     </div>
   )
 }
