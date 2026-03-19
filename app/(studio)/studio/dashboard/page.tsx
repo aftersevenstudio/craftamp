@@ -20,9 +20,17 @@ export default async function StudioDashboardPage() {
 
   const { data: userRecord } = await admin
     .from('users')
-    .select('studio_id')
+    .select('studio_id, role')
     .eq('id', user.id)
     .single()
+
+  // Client users don't belong here — redirect them to their portal
+  if (userRecord?.role === 'client_user') {
+    const { data: studio } = userRecord.studio_id
+      ? await admin.from('studios').select('slug').eq('id', userRecord.studio_id).single()
+      : { data: null }
+    redirect(studio?.slug ? `/${studio.slug}/overview` : '/login')
+  }
 
   const { data: studio } = userRecord?.studio_id
     ? await admin.from('studios').select('name').eq('id', userRecord.studio_id).single()

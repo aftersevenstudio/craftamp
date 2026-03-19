@@ -22,7 +22,7 @@ export default function LoginPage() {
     setError(null)
 
     const supabase = createClient()
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    const { data: authData, error } = await supabase.auth.signInWithPassword({ email, password })
 
     if (error) {
       setError(error.message)
@@ -30,7 +30,25 @@ export default function LoginPage() {
       return
     }
 
-    router.push('/studio/dashboard')
+    // Look up role to redirect to the right place
+    const { data: userRecord } = await supabase
+      .from('users')
+      .select('role, studio_id, client_id')
+      .eq('id', authData.user.id)
+      .single()
+
+    if (userRecord?.role === 'client_user' && userRecord.studio_id) {
+      const { data: studio } = await supabase
+        .from('studios')
+        .select('slug')
+        .eq('id', userRecord.studio_id)
+        .single()
+
+      router.push(studio?.slug ? `/${studio.slug}/overview` : '/login')
+    } else {
+      router.push('/studio/dashboard')
+    }
+
     router.refresh()
   }
 
