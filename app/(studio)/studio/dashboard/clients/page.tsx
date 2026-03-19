@@ -83,19 +83,26 @@ export default async function ClientsPage() {
               const status = !invite ? 'no invite' : invite.accepted_at ? 'active' : 'invited'
 
               return (
-                <Card key={client.id}>
-                  <CardContent className='py-4 flex items-center justify-between'>
-                    <div>
-                      <p className='font-medium text-gray-900'>{client.business_name}</p>
-                      <p className='text-sm text-gray-500'>
-                        {client.contact_name} · {client.contact_email}
-                      </p>
-                    </div>
-                    <Badge variant={status === 'active' ? 'default' : 'secondary'}>
-                      {status}
-                    </Badge>
-                  </CardContent>
-                </Card>
+                <Link key={client.id} href={`/studio/dashboard/clients/${client.id}`}>
+                  <Card className='hover:shadow-sm transition-shadow cursor-pointer'>
+                    <CardContent className='py-4 flex items-center justify-between'>
+                      <div>
+                        <p className='font-medium text-gray-900'>{client.business_name}</p>
+                        <p className='text-sm text-gray-500'>
+                          {client.contact_name} · {client.contact_email}
+                        </p>
+                      </div>
+                      <div className='flex items-center gap-2'>
+                        {client.ga4_property_id && (
+                          <span className='text-xs text-gray-400'>GA4 ✓</span>
+                        )}
+                        <Badge variant={status === 'active' ? 'default' : 'secondary'}>
+                          {status}
+                        </Badge>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
               )
             })}
           </div>

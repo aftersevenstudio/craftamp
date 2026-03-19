@@ -6,6 +6,29 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { resend } from '@/lib/resend'
 import { inviteEmail } from '@/lib/email/invite'
 
+export async function GET() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const admin = createAdminClient()
+  const { data: userRecord } = await admin
+    .from('users')
+    .select('studio_id')
+    .eq('id', user.id)
+    .single()
+
+  const { data: clients } = userRecord?.studio_id
+    ? await admin
+        .from('clients')
+        .select('id, business_name')
+        .eq('studio_id', userRecord.studio_id)
+        .order('business_name')
+    : { data: [] }
+
+  return NextResponse.json({ clients: clients ?? [] })
+}
+
 const schema = z.object({
   businessName: z.string().min(1, 'Business name is required'),
   businessType: z.string().optional(),

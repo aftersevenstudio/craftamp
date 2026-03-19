@@ -61,7 +61,7 @@ export default async function PortalOverviewPage({ params }: Props) {
         <Card>
           <CardContent className='pt-6'>
             <p className='text-3xl font-bold text-gray-900'>{sentReports.length}</p>
-            <p className='text-sm text-gray-500 mt-1'>Reports delivered</p>
+            <p className='text-sm text-gray-500 mt-1'>Reports received</p>
           </CardContent>
         </Card>
         <Card>

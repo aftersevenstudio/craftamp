@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import SignOutButton from '@/components/ui/sign-out-button'
 import Link from 'next/link'
 
 export default async function StudioDashboardPage() {
@@ -34,7 +35,10 @@ export default async function StudioDashboardPage() {
       <header className='bg-white border-b'>
         <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between'>
           <h1 className='text-xl font-semibold text-gray-900'>{studioName}</h1>
-          <span className='text-sm text-gray-500'>{user.email}</span>
+          <div className='flex items-center gap-3'>
+            <span className='text-sm text-gray-500'>{user.email}</span>
+            <SignOutButton />
+          </div>
         </div>
       </header>
 

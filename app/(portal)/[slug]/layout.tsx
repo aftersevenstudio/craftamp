@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import SignOutButton from '@/components/ui/sign-out-button'
 
 interface Props {
   children: React.ReactNode
@@ -63,17 +64,22 @@ export default async function PortalLayout({ children, params }: Props) {
             </div>
 
             {/* Nav */}
-            <nav className='flex items-center gap-1'>
-              {navLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className='px-3 py-1.5 rounded-md text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors'
-                >
-                  {link.label}
-                </Link>
-              ))}
-            </nav>
+            <div className='flex items-center gap-1'>
+              <nav className='flex items-center gap-1'>
+                {navLinks.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className='px-3 py-1.5 rounded-md text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition-colors'
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+              </nav>
+              <div className='ml-2 pl-2 border-l'>
+                <SignOutButton />
+              </div>
+            </div>
           </div>
         </div>
 
