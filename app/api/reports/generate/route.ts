@@ -5,6 +5,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { openai } from '@/lib/openai'
 import { fetchGA4Metrics, formatGA4ForPrompt, type GA4Metrics } from '@/lib/ga4'
 import { fetchLocalInsights, type LocalInsights } from '@/lib/local-insights'
+import { rulesFromReport, generateWithAI, syncOpportunities } from '@/lib/opportunities-engine'
 
 const schema = z.object({
   clientId: z.string().uuid(),
@@ -335,6 +336,27 @@ export async function POST(request: Request) {
       }
 
       send({ type: 'done', reportId: report.id })
+
+      // Generate report-based opportunities after all sections complete
+      try {
+        const savedSections = await admin
+          .from('report_sections')
+          .select('section_type, ai_content')
+          .eq('report_id', report.id)
+
+        const rules = rulesFromReport(savedSections.data ?? [], ga4Metrics)
+        const reportSummary = savedSections.data?.find((s) => s.section_type === 'executive_summary')?.ai_content ?? null
+        const opps = await generateWithAI(
+          { business_name: client.business_name, business_type: client.business_type ?? null, primary_goal: client.primary_goal ?? null },
+          null,
+          reportSummary,
+          rules
+        )
+        await syncOpportunities(clientId, opps, 'report', admin)
+      } catch (err) {
+        console.error('[generate] opportunity generation failed:', err)
+      }
+
       controller.close()
     },
   })

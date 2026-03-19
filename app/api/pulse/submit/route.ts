@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { generatePulseInsights } from '@/lib/pulse-insights'
+import { rulesFromPulse, generateWithAI, syncOpportunities } from '@/lib/opportunities-engine'
 
 const schema = z.object({
   token: z.string().uuid(),
@@ -24,7 +25,7 @@ export async function POST(request: Request) {
 
   const { data: pulse } = await admin
     .from('weekly_pulses')
-    .select('id, status, token_expires_at')
+    .select('id, client_id, status, token_expires_at')
     .eq('check_in_token', token)
     .single()
 
@@ -55,6 +56,29 @@ export async function POST(request: Request) {
       completed_at: new Date().toISOString(),
     })
     .eq('id', pulse.id)
+
+  // Generate opportunities from pulse data (fire and forget — don't block the response)
+  ;(async () => {
+    try {
+      const { data: client } = await admin
+        .from('clients')
+        .select('business_name, business_type, primary_goal')
+        .eq('id', pulse.client_id)
+        .single()
+
+      const pulseData = { client_id: pulse.client_id, leads_count, lead_source, marketing_activity, blockers }
+      const rules = rulesFromPulse(pulseData)
+      const opps = await generateWithAI(
+        { business_name: client?.business_name ?? '', business_type: client?.business_type ?? null, primary_goal: client?.primary_goal ?? null },
+        pulseData,
+        null,
+        rules
+      )
+      await syncOpportunities(pulse.client_id, opps, 'pulse', admin)
+    } catch (err) {
+      console.error('[pulse/submit] opportunity generation failed:', err)
+    }
+  })()
 
   return NextResponse.json({ ok: true })
 }

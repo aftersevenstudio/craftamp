@@ -7,24 +7,19 @@ interface Props {
   params: Promise<{ slug: string }>
 }
 
-const TYPE_LABELS: Record<string, string> = {
-  local_event: 'Local Event',
-  partnership: 'Partnership',
-  marketing: 'Marketing',
-  website: 'Website',
-  review: 'Reviews',
-  social: 'Social Media',
-  general: 'General',
-}
-
-const TYPE_COLORS: Record<string, string> = {
-  local_event: 'bg-purple-100 text-purple-700',
-  partnership: 'bg-blue-100 text-blue-700',
-  marketing: 'bg-orange-100 text-orange-700',
-  website: 'bg-cyan-100 text-cyan-700',
-  review: 'bg-yellow-100 text-yellow-700',
-  social: 'bg-pink-100 text-pink-700',
-  general: 'bg-gray-100 text-gray-700',
+const TYPE_CONFIG: Record<string, { label: string; color: string; icon: string }> = {
+  // Auto-generated types
+  growth: { label: 'Growth', color: 'bg-emerald-100 text-emerald-700', icon: '📈' },
+  quick_win: { label: 'Quick Win', color: 'bg-amber-100 text-amber-700', icon: '⚡' },
+  feedback: { label: 'Feedback', color: 'bg-purple-100 text-purple-700', icon: '💬' },
+  // Manual types (studio-created)
+  local_event: { label: 'Local Event', color: 'bg-violet-100 text-violet-700', icon: '📍' },
+  partnership: { label: 'Partnership', color: 'bg-blue-100 text-blue-700', icon: '🤝' },
+  marketing: { label: 'Marketing', color: 'bg-orange-100 text-orange-700', icon: '📣' },
+  website: { label: 'Website', color: 'bg-cyan-100 text-cyan-700', icon: '🌐' },
+  review: { label: 'Reviews', color: 'bg-yellow-100 text-yellow-700', icon: '⭐' },
+  social: { label: 'Social', color: 'bg-pink-100 text-pink-700', icon: '✨' },
+  general: { label: 'General', color: 'bg-gray-100 text-gray-700', icon: '💡' },
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -63,6 +58,7 @@ export default async function PortalOpportunitiesPage({ params }: Props) {
         .select('*')
         .eq('client_id', clientId)
         .neq('status', 'dismissed')
+        .or('expires_at.is.null,expires_at.gt.' + new Date().toISOString())
         .order('created_at', { ascending: false })
     : { data: [] }
 
@@ -79,16 +75,16 @@ export default async function PortalOpportunitiesPage({ params }: Props) {
   return (
     <div className='space-y-8'>
       <div>
-        <h1 className='text-2xl font-bold text-gray-900'>Opportunities</h1>
+        <h1 className='text-2xl font-bold text-gray-900'>Growth Opportunities</h1>
         <p className='text-sm text-gray-500 mt-1'>
-          Curated growth opportunities from your agency.
+          Actionable recommendations based on your reports and weekly check-ins.
         </p>
       </div>
 
       {!opportunities?.length ? (
         <Card>
           <CardContent className='py-16 text-center'>
-            <p className='text-gray-400 text-sm'>No opportunities yet — check back soon.</p>
+            <p className='text-gray-400 text-sm'>No opportunities yet — check back after your first check-in or report.</p>
           </CardContent>
         </Card>
       ) : (
@@ -99,30 +95,42 @@ export default async function PortalOpportunitiesPage({ params }: Props) {
                 {section.label} · {section.items.length}
               </h2>
               <div className='space-y-3'>
-                {section.items.map((opp) => (
-                  <Card key={opp.id} className={opp.status === 'completed' ? 'opacity-60' : ''}>
-                    <CardContent className='py-4 px-5'>
-                      <div className='flex items-start justify-between gap-4'>
-                        <div className='flex-1'>
-                          <div className='flex items-center gap-2 mb-1'>
-                            <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${TYPE_COLORS[opp.type] ?? TYPE_COLORS.general}`}>
-                              {TYPE_LABELS[opp.type] ?? opp.type}
-                            </span>
+                {section.items.map((opp) => {
+                  const typeConfig = TYPE_CONFIG[opp.type] ?? TYPE_CONFIG.general
+                  const isCompleted = opp.status === 'completed'
+                  return (
+                    <Card key={opp.id} className={isCompleted ? 'opacity-60' : ''}>
+                      <CardContent className='py-4 px-5'>
+                        <div className='flex items-start justify-between gap-4'>
+                          <div className='flex-1 min-w-0'>
+                            <div className='flex items-center gap-2 mb-2 flex-wrap'>
+                              <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${typeConfig.color}`}>
+                                {typeConfig.icon} {typeConfig.label}
+                              </span>
+                              {opp.source && opp.source !== 'manual' && (
+                                <span className='text-xs text-gray-400'>
+                                  From {opp.source === 'pulse' ? 'weekly check-in' : 'monthly report'}
+                                </span>
+                              )}
+                            </div>
+                            <p className={`text-sm font-semibold ${isCompleted ? 'line-through text-gray-400' : 'text-gray-900'}`}>
+                              {opp.title}
+                            </p>
+                            {opp.description && (
+                              <p className='text-sm text-gray-500 mt-1 leading-relaxed'>{opp.description}</p>
+                            )}
+                            {opp.cta_label && !isCompleted && (
+                              <p className='text-xs font-medium text-indigo-600 mt-2'>→ {opp.cta_label}</p>
+                            )}
                           </div>
-                          <p className={`text-sm font-semibold ${opp.status === 'completed' ? 'line-through text-gray-400' : 'text-gray-900'}`}>
-                            {opp.title}
-                          </p>
-                          {opp.description && (
-                            <p className='text-sm text-gray-500 mt-1 leading-relaxed'>{opp.description}</p>
-                          )}
+                          <span className={`shrink-0 text-xs font-medium px-2 py-0.5 rounded-full ${STATUS_COLORS[opp.status] ?? STATUS_COLORS.open}`}>
+                            {STATUS_LABELS[opp.status] ?? opp.status}
+                          </span>
                         </div>
-                        <span className={`shrink-0 text-xs font-medium px-2 py-0.5 rounded-full ${STATUS_COLORS[opp.status] ?? STATUS_COLORS.open}`}>
-                          {STATUS_LABELS[opp.status] ?? opp.status}
-                        </span>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                      </CardContent>
+                    </Card>
+                  )
+                })}
               </div>
             </div>
           ))}

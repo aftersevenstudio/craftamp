@@ -102,5 +102,9 @@ export interface Opportunity {
   title: string
   description: string | null
   status: string
+  source: 'manual' | 'report' | 'pulse'
+  cta_label: string | null
+  expires_at: string | null
+  metadata: Record<string, unknown> | null
   created_at: string
 }
