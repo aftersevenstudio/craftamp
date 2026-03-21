@@ -104,7 +104,7 @@ export default async function StudioDashboardPage() {
   const navItems = [
     { href: '/studio/dashboard/clients', label: 'Clients', description: 'Manage clients and their portals' },
     { href: '/studio/dashboard/reports', label: 'Reports', description: 'Generate and send monthly reports' },
-    { href: '/studio/dashboard/settings', label: 'Settings', description: 'Branding, logo, and custom domain' },
+    { href: '/studio/dashboard/settings', label: 'Settings', description: 'Branding, logo, and client portal url ' },
   ]
 
   return (
