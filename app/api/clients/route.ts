@@ -125,12 +125,10 @@ export async function POST(request: Request) {
   // Send the invite email
   const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL}/invite/${token}`
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
-  const appHost = new URL(appUrl).hostname
-  const isLocalhost = appHost === 'localhost' || appHost.endsWith('.vercel.app')
-  const portalUrl = isLocalhost
-    ? `${appUrl}/${studio.slug}/overview`
-    : `https://${studio.slug}.craftamp.com`
+  const isProd = process.env.NODE_ENV === 'production'
+  const portalUrl = isProd
+    ? `https://${studio.slug}.craftamp.com`
+    : `${process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'}/${studio.slug}/overview`
 
   const { error: emailError } = await resend.emails.send({
     from: `Craftamp <${process.env.RESEND_FROM_EMAIL ?? 'onboarding@resend.dev'}>`,
