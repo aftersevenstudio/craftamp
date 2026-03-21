@@ -2,8 +2,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { Card, CardContent } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import OverviewOpportunities from './overview-opportunities'
 
 interface Props {
   params: Promise<{ slug: string }>
@@ -15,6 +14,15 @@ function formatPeriod(periodMonth: string) {
     month: 'long',
     year: 'numeric',
   })
+}
+
+function timeAgo(dateStr: string) {
+  const days = Math.floor((Date.now() - new Date(dateStr).getTime()) / (1000 * 60 * 60 * 24))
+  if (days === 0) return 'Today'
+  if (days === 1) return 'Yesterday'
+  if (days < 7) return `${days} days ago`
+  if (days < 30) return `${Math.floor(days / 7)}w ago`
+  return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
 export default async function PortalOverviewPage({ params }: Props) {
@@ -33,7 +41,13 @@ export default async function PortalOverviewPage({ params }: Props) {
   const clientId = userRecord?.client_id
   const accent = studio?.brand_color ?? '#6366f1'
 
-  const [{ data: client }, { data: reports }, { data: opportunities }] = await Promise.all([
+  const [
+    { data: client },
+    { data: reports },
+    { data: oppPreview },
+    { count: totalOpenOpps },
+    { data: latestPulse },
+  ] = await Promise.all([
     clientId
       ? admin.from('clients').select('business_name, business_type, contact_name').eq('id', clientId).single()
       : Promise.resolve({ data: null }),
@@ -41,41 +55,56 @@ export default async function PortalOverviewPage({ params }: Props) {
       ? admin.from('reports').select('id, status, period_month, sent_at').eq('client_id', clientId).eq('status', 'sent').order('period_month', { ascending: false })
       : Promise.resolve({ data: [] }),
     clientId
-      ? admin.from('opportunities').select('id, title, type, status').eq('client_id', clientId).eq('status', 'open').order('created_at', { ascending: false }).limit(3)
+      ? admin.from('opportunities').select('id, title, type, description, source, cta_label, status').eq('client_id', clientId).in('status', ['open', 'in_progress']).order('created_at', { ascending: false }).limit(2)
       : Promise.resolve({ data: [] }),
+    clientId
+      ? admin.from('opportunities').select('id', { count: 'exact', head: true }).eq('client_id', clientId).in('status', ['open', 'in_progress'])
+      : Promise.resolve({ count: 0 }),
+    clientId
+      ? admin.from('weekly_pulses').select('week_start, summary, recommendation').eq('client_id', clientId).eq('status', 'completed').order('week_start', { ascending: false }).limit(1).single()
+      : Promise.resolve({ data: null }),
   ])
 
   const latestReport = reports?.[0] ?? null
   const firstName = client?.contact_name?.split(' ')[0] ?? null
+  const openOpps = oppPreview ?? []
+  const openOppsCount = totalOpenOpps ?? 0
+  const isEmpty = !latestReport && openOppsCount === 0 && !latestPulse
 
   return (
-    <div className='space-y-8'>
+    <div className='space-y-6'>
 
-      {/* Welcome hero */}
-      <div className='rounded-xl overflow-hidden'>
-        <div className='px-6 py-8' style={{ background: `${accent}15` }}>
-          <p className='text-sm font-medium mb-1' style={{ color: accent }}>
-            Welcome back{firstName ? `, ${firstName}` : ''}
-          </p>
-          <h1 className='text-2xl font-bold text-gray-900'>
-            {client?.business_name ?? 'Your Portal'}
-          </h1>
-          {client?.business_type && (
-            <p className='text-sm text-gray-500 mt-1'>{client.business_type}</p>
-          )}
-        </div>
+      {/* Welcome */}
+      <div className='rounded-xl px-6 py-6' style={{ background: `${accent}12` }}>
+        <p className='text-xs font-semibold uppercase tracking-wide mb-1' style={{ color: accent }}>
+          Welcome back{firstName ? `, ${firstName}` : ''}
+        </p>
+        <h1 className='text-2xl font-bold text-gray-900'>{client?.business_name ?? 'Your Portal'}</h1>
+        {studio?.name && (
+          <p className='text-sm text-gray-400 mt-0.5'>Managed by {studio.name}</p>
+        )}
       </div>
 
-      {/* Latest report CTA — the most important thing */}
+      {/* Empty state */}
+      {isEmpty && (
+        <div className='rounded-xl border border-dashed border-gray-200 px-8 py-12 text-center space-y-2'>
+          <p className='text-sm font-medium text-gray-700'>You're all set up — here's what's coming</p>
+          <p className='text-sm text-gray-400 max-w-sm mx-auto'>
+            Your studio will send monthly reports, surface growth opportunities, and check in weekly. Everything will appear right here.
+          </p>
+        </div>
+      )}
+
+      {/* Latest report */}
       {latestReport ? (
-        <div className='rounded-xl border-2 p-6 flex items-center justify-between gap-4' style={{ borderColor: accent }}>
+        <div className='rounded-xl border-2 p-5 flex items-center justify-between gap-4' style={{ borderColor: accent }}>
           <div>
             <p className='text-xs font-semibold uppercase tracking-wide mb-1' style={{ color: accent }}>
               Latest report
             </p>
             <p className='text-lg font-bold text-gray-900'>{formatPeriod(latestReport.period_month)}</p>
-            <p className='text-sm text-gray-500 mt-0.5'>
-              Delivered {new Date(latestReport.sent_at!).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+            <p className='text-sm text-gray-400 mt-0.5'>
+              Delivered {latestReport.sent_at ? timeAgo(latestReport.sent_at) : ''}
             </p>
           </div>
           <Link
@@ -86,84 +115,59 @@ export default async function PortalOverviewPage({ params }: Props) {
             View report →
           </Link>
         </div>
-      ) : (
-        <div className='rounded-xl border border-dashed p-8 text-center'>
-          <p className='text-gray-500 text-sm'>Your first report will appear here once it's ready.</p>
+      ) : !isEmpty && (
+        <div className='rounded-xl border border-dashed border-gray-200 p-6 text-center'>
+          <p className='text-sm text-gray-400'>Your first report will appear here once it's ready.</p>
         </div>
       )}
 
-      {/* Stats row */}
-      <div className='grid grid-cols-3 gap-4'>
-        <Card>
-          <CardContent className='pt-5 pb-4'>
+      {/* Stats */}
+      {!isEmpty && (
+        <div className='grid grid-cols-3 gap-3'>
+          <div className='bg-white rounded-xl border border-gray-200 px-4 py-4'>
             <p className='text-2xl font-bold text-gray-900'>{reports?.length ?? 0}</p>
-            <p className='text-xs text-gray-500 mt-1'>Reports delivered</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className='pt-5 pb-4'>
-            <p className='text-2xl font-bold text-gray-900'>{opportunities?.length ?? 0}</p>
-            <p className='text-xs text-gray-500 mt-1'>Open opportunities</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className='pt-5 pb-4'>
-            <p className='text-2xl font-bold text-gray-900'>
-              {latestReport ? formatPeriod(latestReport.period_month).split(' ')[0] : '—'}
-            </p>
-            <p className='text-xs text-gray-500 mt-1'>Latest period</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Report history */}
-      {(reports?.length ?? 0) > 1 && (
-        <div>
-          <div className='flex items-center justify-between mb-3'>
-            <h2 className='text-sm font-semibold text-gray-900'>Report history</h2>
-            <Link href={`/${slug}/reports`} className='text-xs text-gray-400 hover:text-gray-600'>
-              View all →
-            </Link>
+            <p className='text-xs text-gray-400 mt-1'>Reports delivered</p>
           </div>
-          <div className='space-y-2'>
-            {reports!.slice(1, 4).map((report) => (
-              <Link key={report.id} href={`/${slug}/reports?id=${report.id}`}>
-                <Card className='hover:shadow-sm transition-shadow cursor-pointer mb-3'>
-                  <CardContent className='py-3 flex items-center justify-between'>
-                    <span className='text-sm text-gray-700'>{formatPeriod(report.period_month)}</span>
-                    <span className='text-xs text-gray-400'>
-                      {new Date(report.sent_at!).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                    </span>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
+          <div className='bg-white rounded-xl border border-gray-200 px-4 py-4'>
+            <p className='text-2xl font-bold text-gray-900'>{openOppsCount}</p>
+            <p className='text-xs text-gray-400 mt-1'>Open opportunities</p>
+          </div>
+          <div className='bg-white rounded-xl border border-gray-200 px-4 py-4'>
+            <p className='text-2xl font-bold text-gray-900'>
+              {latestPulse?.week_start ? timeAgo(latestPulse.week_start) : '—'}
+            </p>
+            <p className='text-xs text-gray-400 mt-1'>Last check-in</p>
           </div>
         </div>
       )}
 
-      {/* Opportunities */}
-      {(opportunities?.length ?? 0) > 0 && (
-        <div>
+      {/* Opportunities with actions */}
+      {openOppsCount > 0 && (
+        <OverviewOpportunities
+          initialOpps={openOpps}
+          totalCount={openOppsCount}
+          slug={slug}
+          accent={accent}
+        />
+      )}
+
+      {/* Latest pulse insight */}
+      {(latestPulse?.summary || latestPulse?.recommendation) && (
+        <div className='rounded-xl border border-gray-200 bg-white px-5 py-5'>
           <div className='flex items-center justify-between mb-3'>
-            <h2 className='text-sm font-semibold text-gray-900'>Open opportunities</h2>
-            <Link href={`/${slug}/opportunities`} className='text-xs text-gray-400 hover:text-gray-600'>
-              View all →
-            </Link>
+            <h2 className='text-sm font-semibold text-gray-900'>From your last check-in</h2>
+            {latestPulse.week_start && (
+              <span className='text-xs text-gray-400'>
+                Week of {new Date(latestPulse.week_start + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+              </span>
+            )}
           </div>
-          <div className='space-y-2'>
-            {opportunities!.map((opp) => (
-              <Card key={opp.id}>
-                <CardContent className='py-3 flex items-center justify-between'>
-                  <div>
-                    <p className='text-sm font-medium text-gray-800'>{opp.title}</p>
-                    <p className='text-xs text-gray-400 capitalize mt-0.5'>{opp.type}</p>
-                  </div>
-                  <Badge variant='secondary'>{opp.status}</Badge>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          {latestPulse.summary && (
+            <p className='text-sm text-gray-600 leading-relaxed'>{latestPulse.summary}</p>
+          )}
+          {latestPulse.recommendation && (
+            <p className='text-sm text-gray-500 mt-2 leading-relaxed'>→ {latestPulse.recommendation}</p>
+          )}
         </div>
       )}
 
