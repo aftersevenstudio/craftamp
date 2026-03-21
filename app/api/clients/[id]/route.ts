@@ -94,3 +94,34 @@ export async function PATCH(
 
   return NextResponse.json({ client })
 }
+
+export async function DELETE(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const studioId = await getStudioId(user.id)
+  if (!studioId) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
+  const admin = createAdminClient()
+
+  // Verify ownership before deleting
+  const { data: existing } = await admin
+    .from('clients')
+    .select('id')
+    .eq('id', id)
+    .eq('studio_id', studioId)
+    .single()
+
+  if (!existing) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+
+  const { error } = await admin.from('clients').delete().eq('id', id)
+
+  if (error) return NextResponse.json({ error: 'Failed to delete client.' }, { status: 500 })
+
+  return NextResponse.json({ ok: true })
+}

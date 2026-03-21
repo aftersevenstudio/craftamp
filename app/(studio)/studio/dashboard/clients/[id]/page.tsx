@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import EditClientForm from './edit-client-form'
 import OpportunitiesPanel from './opportunities-panel'
 import PulsePanel from './pulse-panel'
+import DeleteClientButton from './delete-client-button'
 
 interface Props {
   params: Promise<{ id: string }>
@@ -142,6 +143,9 @@ export default async function ClientSettingsPage({ params, searchParams }: Props
           clientId={id}
           initialOpportunities={opportunities ?? []}
         />
+
+        {/* Danger zone */}
+        <DeleteClientButton clientId={id} businessName={client.business_name} />
 
       </main>
   )

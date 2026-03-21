@@ -1,10 +1,20 @@
 import { redirect } from 'next/navigation'
 import { headers } from 'next/headers'
 import Link from 'next/link'
+import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import SignOutButton from '@/components/ui/sign-out-button'
 import PortalNav from './portal-nav'
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params
+  const admin = createAdminClient()
+  const { data: studio } = await admin.from('studios').select('name').eq('slug', slug).single()
+  return {
+    title: studio?.name ? `${studio.name} — Client Portal` : 'Client Portal',
+  }
+}
 
 const CRAFTAMP_DOMAIN = 'craftamp.com'
 
