@@ -95,7 +95,7 @@ export default async function PortalLayout({ children, params }: Props) {
             <div className='flex items-center gap-1'>
               <PortalNav links={navLinks} />
               <div className='ml-2 pl-2 border-l'>
-                <SignOutButton />
+                <SignOutButton redirectTo={`/login?studio=${slug}`} />
               </div>
             </div>
           </div>

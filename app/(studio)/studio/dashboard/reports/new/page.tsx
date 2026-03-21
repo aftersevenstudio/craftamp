@@ -30,12 +30,12 @@ interface LiveSection {
 
 type PageState = 'idle' | 'generating' | 'done'
 
-const SECTION_ICONS: Record<string, string> = {
-  executive_summary: '📋',
-  website_performance: '📈',
-  local_presence: '🌐',
-  recommendations: '🎯',
-}
+const SECTIONS = [
+  { type: 'executive_summary',  label: 'Executive Summary',    icon: '📋' },
+  { type: 'website_performance', label: 'Website Performance', icon: '📈' },
+  { type: 'local_presence',     label: 'Local Presence',       icon: '🌐' },
+  { type: 'recommendations',    label: 'Recommendations',      icon: '🎯' },
+]
 
 function getPeriodOptions() {
   const options: { value: string; label: string }[] = []
@@ -126,81 +126,148 @@ export default function NewReportPage() {
   const selectedClient = clients.find((c) => c.id === clientId)
 
   if (pageState === 'generating' || pageState === 'done') {
-    const totalSections = 4
-    const progress = Math.round((liveSections.length / totalSections) * 100)
+    const completedTypes = new Set(liveSections.map((s) => s.section_type))
+    const currentSectionIndex = liveSections.length
+    const progress = pageState === 'done' ? 100 : Math.round((liveSections.length / SECTIONS.length) * 100)
 
     return (
       <main className='max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6'>
-          {/* Progress */}
-          <div className='space-y-2'>
-            <div className='flex items-center justify-between'>
-              <div>
-                <h1 className='text-xl font-bold text-gray-900'>
-                  {selectedClient?.business_name ?? 'Generating report…'}
-                </h1>
-                <p className='text-sm text-gray-500'>{periods.find(p => p.value === periodMonth)?.label}</p>
-              </div>
-              {pageState === 'generating' && (
-                <span className='text-sm text-gray-500 animate-pulse'>Writing with AI…</span>
-              )}
-              {pageState === 'done' && (
-                <span className='text-sm text-green-600 font-medium'>✓ Report ready</span>
-              )}
-            </div>
-            <div className='w-full bg-gray-100 rounded-full h-1.5'>
-              <div
-                className='bg-gray-900 h-1.5 rounded-full transition-all duration-500'
-                style={{ width: `${pageState === 'done' ? 100 : progress}%` }}
-              />
-            </div>
+
+        {/* Header */}
+        <div className='flex items-start justify-between gap-4'>
+          <div>
+            <h1 className='text-xl font-bold text-gray-900'>
+              {selectedClient?.business_name}
+            </h1>
+            <p className='text-sm text-gray-500 mt-0.5'>{periods.find(p => p.value === periodMonth)?.label} report</p>
           </div>
-
-          {/* Live sections */}
-          {liveSections.map((section) => (
-            <Card key={section.section_type} className='overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-500'>
-              <CardHeader className='bg-gray-50 border-b py-3 px-5'>
-                <CardTitle className='text-sm font-semibold text-gray-700 flex items-center gap-2'>
-                  <span>{SECTION_ICONS[section.section_type] ?? '📄'}</span>
-                  {section.label}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className='px-5 py-4'>
-                {section.error ? (
-                  <p className='text-sm text-red-500'>Failed to generate this section.</p>
-                ) : (
-                  <div className='prose prose-sm prose-gray max-w-none'>
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{section.content}</ReactMarkdown>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ))}
-
-          {/* Skeleton for sections still generating */}
-          {pageState === 'generating' && (
-            <Card className='overflow-hidden opacity-50'>
-              <CardHeader className='bg-gray-50 border-b py-3 px-5'>
-                <div className='h-4 bg-gray-200 rounded w-32 animate-pulse' />
-              </CardHeader>
-              <CardContent className='px-5 py-4 space-y-2'>
-                <div className='h-3 bg-gray-100 rounded animate-pulse' />
-                <div className='h-3 bg-gray-100 rounded w-4/5 animate-pulse' />
-                <div className='h-3 bg-gray-100 rounded w-3/5 animate-pulse' />
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Action buttons when done */}
           {pageState === 'done' && reportId && (
-            <div className='flex items-center justify-end gap-2'>
+            <div className='flex items-center gap-2 shrink-0'>
               <Link href={`/studio/dashboard/reports/${reportId}`}>
-                <Button variant='outline' size='sm'>View full report</Button>
+                <Button variant='outline' size='sm'>View report</Button>
               </Link>
               <Link href={`/studio/dashboard/reports/${reportId}`}>
                 <Button size='sm'>Send to client →</Button>
               </Link>
             </div>
           )}
+        </div>
+
+        {/* Progress bar + section steps */}
+        <div className='bg-white rounded-xl border border-gray-200 p-5 space-y-4'>
+          <div className='flex items-center justify-between mb-1'>
+            <span className='text-xs font-medium text-gray-500'>
+              {pageState === 'done' ? 'Complete' : `Writing section ${currentSectionIndex + 1} of ${SECTIONS.length}…`}
+            </span>
+            <span className='text-xs font-medium text-gray-500'>{progress}%</span>
+          </div>
+          <div className='w-full bg-gray-100 rounded-full h-1.5'>
+            <div
+              className='bg-gray-900 h-1.5 rounded-full transition-all duration-700'
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+
+          {/* Section checklist */}
+          <div className='grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1'>
+            {SECTIONS.map((s, i) => {
+              const done = completedTypes.has(s.type)
+              const active = !done && i === currentSectionIndex && pageState === 'generating'
+              return (
+                <div
+                  key={s.type}
+                  className={`flex items-center gap-2 text-xs rounded-lg px-3 py-2 border transition-colors ${
+                    done  ? 'bg-green-50 border-green-200 text-green-700' :
+                    active ? 'bg-gray-50 border-gray-300 text-gray-700' :
+                             'border-gray-100 text-gray-400'
+                  }`}
+                >
+                  <span>
+                    {done ? '✓' : active ? <span className='inline-block animate-pulse'>⋯</span> : s.icon}
+                  </span>
+                  <span className='font-medium truncate'>{s.label}</span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Sections — show all, skeleton until content arrives */}
+        <div className='space-y-4'>
+          {SECTIONS.map((s) => {
+            const live = liveSections.find((l) => l.section_type === s.type)
+            const isNext = !live && liveSections.length === SECTIONS.indexOf(s) && pageState === 'generating'
+            const isPending = !live && !isNext
+
+            if (isPending) {
+              return (
+                <Card key={s.type} className='overflow-hidden opacity-40'>
+                  <CardHeader className='bg-gray-50 border-b py-3 px-5'>
+                    <CardTitle className='text-sm font-semibold text-gray-400 flex items-center gap-2'>
+                      <span>{s.icon}</span>{s.label}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className='px-5 py-4 space-y-2'>
+                    <div className='h-3 bg-gray-100 rounded w-full' />
+                    <div className='h-3 bg-gray-100 rounded w-4/5' />
+                    <div className='h-3 bg-gray-100 rounded w-3/5' />
+                  </CardContent>
+                </Card>
+              )
+            }
+
+            if (isNext) {
+              return (
+                <Card key={s.type} className='overflow-hidden'>
+                  <CardHeader className='bg-gray-50 border-b py-3 px-5'>
+                    <CardTitle className='text-sm font-semibold text-gray-600 flex items-center gap-2'>
+                      <span>{s.icon}</span>{s.label}
+                      <span className='ml-1 text-gray-400 animate-pulse'>writing…</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className='px-5 py-4 space-y-2'>
+                    <div className='h-3 bg-gray-100 rounded w-full animate-pulse' />
+                    <div className='h-3 bg-gray-100 rounded w-4/5 animate-pulse' />
+                    <div className='h-3 bg-gray-100 rounded w-3/5 animate-pulse' />
+                  </CardContent>
+                </Card>
+              )
+            }
+
+            return (
+              <Card key={s.type} className='overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-500'>
+                <CardHeader className='bg-gray-50 border-b py-3 px-5'>
+                  <CardTitle className='text-sm font-semibold text-gray-700 flex items-center gap-2'>
+                    <span className='text-green-500'>✓</span>
+                    {s.label}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className='px-5 py-4'>
+                  {live!.error ? (
+                    <p className='text-sm text-red-500'>Failed to generate this section.</p>
+                  ) : (
+                    <div className='prose prose-sm prose-gray max-w-none'>
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{live!.content}</ReactMarkdown>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )
+          })}
+        </div>
+
+        {/* Done CTA — repeated at bottom for long pages */}
+        {pageState === 'done' && reportId && (
+          <div className='flex items-center justify-end gap-2 pt-2'>
+            <Link href={`/studio/dashboard/reports/${reportId}`}>
+              <Button variant='outline' size='sm'>View report</Button>
+            </Link>
+            <Link href={`/studio/dashboard/reports/${reportId}`}>
+              <Button size='sm'>Send to client →</Button>
+            </Link>
+          </div>
+        )}
+
       </main>
     )
   }
@@ -219,7 +286,7 @@ export default function NewReportPage() {
               <div className='space-y-2'>
                 <Label htmlFor='client'>Client</Label>
                 <Select value={clientId} onValueChange={(v) => setClientId(v ?? '')}>
-                  <SelectTrigger id='client'>
+                  <SelectTrigger id='client' className='w-full'>
                     <SelectValue placeholder='Select a client…'>
                       {clients.find((c) => c.id === clientId)?.business_name ?? 'Select a client…'}
                     </SelectValue>
@@ -235,8 +302,10 @@ export default function NewReportPage() {
               <div className='space-y-2'>
                 <Label htmlFor='period'>Report period</Label>
                 <Select value={periodMonth} onValueChange={(v) => setPeriodMonth(v ?? periodMonth)}>
-                  <SelectTrigger id='period'>
-                    <SelectValue />
+                  <SelectTrigger id='period' className='w-full'>
+                    <SelectValue>
+                      {periods.find((p) => p.value === periodMonth)?.label}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {periods.map((p) => (

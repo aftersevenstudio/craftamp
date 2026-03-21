@@ -6,8 +6,15 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import DeleteReportButton from './delete-report-button'
+import ReportsFilter from './reports-filter'
 
-export default async function ReportsPage() {
+interface Props {
+  searchParams: Promise<{ client?: string }>
+}
+
+export default async function ReportsPage({ searchParams }: Props) {
+  const { client: filterClientId } = await searchParams
+
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
@@ -21,24 +28,30 @@ export default async function ReportsPage() {
     .single()
 
   const { data: clients } = userRecord?.studio_id
-    ? await admin.from('clients').select('id, business_name').eq('studio_id', userRecord.studio_id)
+    ? await admin.from('clients').select('id, business_name').eq('studio_id', userRecord.studio_id).order('business_name')
     : { data: [] }
 
-  const clientIds = (clients ?? []).map((c) => c.id)
-  const clientMap = new Map((clients ?? []).map((c) => [c.id, c.business_name]))
+  const allClients = clients ?? []
+  const clientIds = allClients.map((c) => c.id)
+  const clientMap = new Map(allClients.map((c) => [c.id, c.business_name]))
 
-  const { data: reports } = clientIds.length
+  const filteredIds = filterClientId ? [filterClientId] : clientIds
+
+  const { data: reports } = filteredIds.length
     ? await admin
         .from('reports')
         .select('id, client_id, status, period_month, sent_at, created_at')
-        .in('client_id', clientIds)
+        .in('client_id', filteredIds)
         .order('created_at', { ascending: false })
     : { data: [] }
 
   return (
     <main className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8'>
       <div className='flex items-center justify-between mb-6'>
-        <h1 className='text-2xl font-bold text-gray-900'>Reports</h1>
+        <div className='flex items-center gap-3'>
+          <h1 className='text-2xl font-bold text-gray-900'>Reports</h1>
+          {allClients.length > 0 && <ReportsFilter clients={allClients} />}
+        </div>
         <Link href='/studio/dashboard/reports/new'>
           <Button size='sm'>Generate report</Button>
         </Link>
