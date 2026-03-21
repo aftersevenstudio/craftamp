@@ -84,7 +84,7 @@ export default async function ClientsPage() {
 
               return (
                 <Link key={client.id} href={`/studio/dashboard/clients/${client.id}`}>
-                  <Card className='hover:shadow-sm transition-shadow cursor-pointer'>
+                  <Card className='hover:shadow-sm transition-shadow cursor-pointer mb-3'>
                     <CardContent className='py-4 flex items-center justify-between'>
                       <div>
                         <p className='font-medium text-gray-900'>{client.business_name}</p>

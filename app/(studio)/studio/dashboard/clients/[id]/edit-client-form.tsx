@@ -166,29 +166,29 @@ export default function EditClientForm({ client }: { client: Client }) {
               />
             </div>
 
-            <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
-              <div className='space-y-2'>
-                <Label htmlFor='primaryGoal'>Primary goal</Label>
-                <Select value={primaryGoal} onValueChange={(v) => setPrimaryGoal(v ?? '')}>
-                  <SelectTrigger id='primaryGoal'>
-                    <SelectValue placeholder='Select a goal…' />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {PRIMARY_GOALS.map((g) => (
-                      <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className='space-y-2'>
-                <Label htmlFor='targetAudience'>Target audience</Label>
-                <Input
-                  id='targetAudience'
-                  value={targetAudience}
-                  placeholder='e.g. Couples and professionals aged 28–45'
-                  onChange={(e) => setTargetAudience(e.target.value)}
-                />
-              </div>
+            <div className='space-y-2'>
+              <Label htmlFor='primaryGoal'>Primary goal</Label>
+              <Select value={primaryGoal} onValueChange={(v) => setPrimaryGoal(v ?? '')}>
+                <SelectTrigger id='primaryGoal'>
+                  <SelectValue placeholder='Select a goal…' />
+                </SelectTrigger>
+                <SelectContent>
+                  {PRIMARY_GOALS.map((g) => (
+                    <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className='space-y-2'>
+              <Label htmlFor='targetAudience'>Target audience</Label>
+              <Textarea
+                id='targetAudience'
+                value={targetAudience}
+                placeholder='e.g. Couples and professionals aged 28–45 who enjoy dining out 2–3x per week. Price-conscious but willing to splurge for special occasions.'
+                onChange={(e) => setTargetAudience(e.target.value)}
+                rows={3}
+              />
             </div>
           </fieldset>
 
