@@ -130,30 +130,7 @@ export default function NewReportPage() {
     const progress = Math.round((liveSections.length / totalSections) * 100)
 
     return (
-      <div className='min-h-screen bg-gray-50'>
-        <header className='bg-white border-b'>
-          <div className='max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between'>
-            <div className='flex items-center gap-3'>
-              <Link href='/studio/dashboard' className='text-sm text-gray-500 hover:text-gray-700'>Dashboard</Link>
-              <span className='text-gray-300'>/</span>
-              <Link href='/studio/dashboard/reports' className='text-sm text-gray-500 hover:text-gray-700'>Reports</Link>
-              <span className='text-gray-300'>/</span>
-              <span className='text-sm font-medium text-gray-900'>Generating</span>
-            </div>
-            {pageState === 'done' && reportId && (
-              <div className='flex items-center gap-2'>
-                <Link href={`/studio/dashboard/reports/${reportId}`}>
-                  <Button variant='outline' size='sm'>View full report</Button>
-                </Link>
-                <Link href={`/studio/dashboard/reports/${reportId}`}>
-                  <Button size='sm'>Send to client →</Button>
-                </Link>
-              </div>
-            )}
-          </div>
-        </header>
-
-        <main className='max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6'>
+      <main className='max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6'>
           {/* Progress */}
           <div className='space-y-2'>
             <div className='flex items-center justify-between'>
@@ -212,26 +189,24 @@ export default function NewReportPage() {
               </CardContent>
             </Card>
           )}
-        </main>
-      </div>
+
+          {/* Action buttons when done */}
+          {pageState === 'done' && reportId && (
+            <div className='flex items-center justify-end gap-2'>
+              <Link href={`/studio/dashboard/reports/${reportId}`}>
+                <Button variant='outline' size='sm'>View full report</Button>
+              </Link>
+              <Link href={`/studio/dashboard/reports/${reportId}`}>
+                <Button size='sm'>Send to client →</Button>
+              </Link>
+            </div>
+          )}
+      </main>
     )
   }
 
   return (
-    <div className='min-h-screen bg-gray-50'>
-      <header className='bg-white border-b'>
-        <div className='max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4'>
-          <div className='flex items-center gap-3'>
-            <Link href='/studio/dashboard' className='text-sm text-gray-500 hover:text-gray-700'>Dashboard</Link>
-            <span className='text-gray-300'>/</span>
-            <Link href='/studio/dashboard/reports' className='text-sm text-gray-500 hover:text-gray-700'>Reports</Link>
-            <span className='text-gray-300'>/</span>
-            <span className='text-sm font-medium text-gray-900'>Generate</span>
-          </div>
-        </div>
-      </header>
-
-      <main className='max-w-2xl mx-auto px-4 py-10'>
+    <main className='max-w-2xl mx-auto px-4 py-10'>
         <Card>
           <CardHeader>
             <CardTitle>Generate a report</CardTitle>
@@ -283,6 +258,5 @@ export default function NewReportPage() {
           </CardContent>
         </Card>
       </main>
-    </div>
   )
 }

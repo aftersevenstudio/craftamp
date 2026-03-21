@@ -19,7 +19,10 @@
       "Bash(brew install:*)",
       "Bash(ngrok config:*)",
       "Bash(ls /Users/patrickgaston/a7_codebase/craftamp/app/\\\\\\(marketing\\\\\\)/)",
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "Bash(head:*)",
+      "Bash(grep -n \"header\\\\|min-h-screen\\\\|</header>\" /Users/patrickgaston/a7_codebase/craftamp/app/\\\\\\(studio\\\\\\)/studio/dashboard/reports/[id]/page.tsx)",
+      "Bash(head -20 grep -n \"header\\\\|min-h-screen\\\\|</header>\" /Users/patrickgaston/a7_codebase/craftamp/app/\\\\\\(studio\\\\\\)/studio/dashboard/reports/new/page.tsx)"
     ]
   }
 }

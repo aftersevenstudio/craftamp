@@ -50,16 +50,12 @@ export default async function ReportPage({ params }: Props) {
   })
 
   return (
-    <div className='min-h-screen bg-gray-50'>
-      <header className='bg-white border-b'>
-        <div className='max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between'>
-          <div className='flex items-center gap-3'>
-            <Link href='/studio/dashboard' className='text-sm text-gray-500 hover:text-gray-700'>Dashboard</Link>
-            <span className='text-gray-300'>/</span>
-            <Link href='/studio/dashboard/reports' className='text-sm text-gray-500 hover:text-gray-700'>Reports</Link>
-            <span className='text-gray-300'>/</span>
-            <span className='text-sm font-medium text-gray-900'>{periodLabel}</span>
-          </div>
+    <main className='max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8'>
+      <div className='flex items-center justify-between mb-6'>
+        <Link href='/studio/dashboard/reports' className='text-sm text-gray-500 hover:text-gray-700'>
+          ← Reports
+        </Link>
+        <div>
           {report.status === 'draft' && <SendReportButton reportId={id} />}
           {report.status === 'sent' && (
             <Badge variant='default'>
@@ -67,15 +63,12 @@ export default async function ReportPage({ params }: Props) {
             </Badge>
           )}
         </div>
-      </header>
-
-      <main className='max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8'>
-        <ReportViewer
-          sections={sections ?? []}
-          periodLabel={periodLabel}
-          businessName={client?.business_name ?? ''}
-        />
-      </main>
-    </div>
+      </div>
+      <ReportViewer
+        sections={sections ?? []}
+        periodLabel={periodLabel}
+        businessName={client?.business_name ?? ''}
+      />
+    </main>
   )
 }

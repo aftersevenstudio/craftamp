@@ -2,7 +2,6 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import SignOutButton from '@/components/ui/sign-out-button'
 
 function greeting() {
   const h = new Date().getHours()
@@ -109,31 +108,7 @@ export default async function StudioDashboardPage() {
   ]
 
   return (
-    <div className='min-h-screen bg-gray-50'>
-      <header className='bg-white border-b sticky top-0 z-10'>
-        <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between'>
-          <span className='text-sm font-semibold text-gray-900'>{studio?.name ?? 'Studio'}</span>
-          <div className='flex items-center gap-4'>
-            <nav className='hidden sm:flex items-center gap-1'>
-              {navItems.map((n) => (
-                <Link
-                  key={n.href}
-                  href={n.href}
-                  className='px-3 py-1.5 rounded-md text-sm text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors'
-                >
-                  {n.label}
-                </Link>
-              ))}
-            </nav>
-            <div className='pl-3 border-l'>
-              <SignOutButton />
-            </div>
-          </div>
-        </div>
-        <div className='h-0.5 w-full' style={{ background: accent }} />
-      </header>
-
-      <main className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10'>
+    <main className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10'>
 
         {/* Greeting */}
         <div>
@@ -251,6 +226,5 @@ export default async function StudioDashboardPage() {
         </div>
 
       </main>
-    </div>
   )
 }

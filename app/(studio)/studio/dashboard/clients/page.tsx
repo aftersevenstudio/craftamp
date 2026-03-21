@@ -48,26 +48,15 @@ export default async function ClientsPage() {
   }
 
   return (
-    <div className='min-h-screen bg-gray-50'>
-      <header className='bg-white border-b'>
-        <div className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between'>
-          <div className='flex items-center gap-3'>
-            <Link href='/studio/dashboard' className='text-sm text-gray-500 hover:text-gray-700'>
-              Dashboard
-            </Link>
-            <span className='text-gray-300'>/</span>
-            <span className='text-sm font-medium text-gray-900'>Clients</span>
-          </div>
-          <Link href='/studio/dashboard/clients/new'>
-            <Button size='sm'>Invite client</Button>
-          </Link>
-        </div>
-      </header>
+    <main className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8'>
+      <div className='flex items-center justify-between mb-6'>
+        <h1 className='text-2xl font-bold text-gray-900'>Clients</h1>
+        <Link href='/studio/dashboard/clients/new'>
+          <Button size='sm'>Invite client</Button>
+        </Link>
+      </div>
 
-      <main className='max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8'>
-        <h1 className='text-2xl font-bold text-gray-900 mb-6'>Clients</h1>
-
-        {!clients?.length ? (
+      {!clients?.length ? (
           <Card>
             <CardContent className='py-16 text-center'>
               <p className='text-gray-500 mb-4'>No clients yet.</p>
@@ -108,6 +97,5 @@ export default async function ClientsPage() {
           </div>
         )}
       </main>
-    </div>
   )
 }
