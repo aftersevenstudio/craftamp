@@ -38,7 +38,8 @@ function buildSections(
   targetAudience: string | null,
   monthName: string,
   ga4: GA4Metrics | null,
-  localInsights: LocalInsights | null
+  localInsights: LocalInsights | null,
+  hasGA4Property: boolean
 ): Section[] {
   const goalLabel = primaryGoal ? GOAL_LABELS[primaryGoal] ?? primaryGoal : null
   const context = [
@@ -50,10 +51,15 @@ function buildSections(
     city ? `City: ${city}` : null,
     `Report period: ${monthName}`,
   ].filter(Boolean).join(' | ')
-  const ga4Block = ga4 ? formatGA4ForPrompt(ga4) : null
 
-  const websitePrompt = ga4Block
-    ? `${context}
+  const ga4Block = ga4 && ga4.sufficientData ? formatGA4ForPrompt(ga4) : null
+
+  // --- Website Performance prompt: 3 distinct cases ---
+  let websitePrompt: string
+
+  if (ga4Block) {
+    // Case 1: GA4 connected with sufficient data — use real figures
+    websitePrompt = `${context}
 
 ${ga4Block}
 
@@ -68,22 +74,54 @@ Requirements:
 - Keep it under 200 words
 
 Return only the markdown content, no section title.`
-    : `${context}
+
+  } else if (hasGA4Property && ga4 && !ga4.sufficientData) {
+    // Case 2: GA4 connected but not enough data yet (< 14 days)
+    const partialBlock = formatGA4ForPrompt(ga4)
+    websitePrompt = `${context}
+
+${partialBlock}
+Days with recorded sessions: ${ga4.daysWithData} out of the full month
 
 Write the website performance section of this client's monthly marketing report. Use markdown formatting.
 
+This client's GA4 tracking was recently set up and only ${ga4.daysWithData} day(s) of data are available for ${monthName}. The figures above are real but partial.
+
 Requirements:
-- Lead with a **headline metric** (e.g. total sessions) in bold
-- Use a bullet list for core metrics: sessions, avg session duration, bounce rate, top 3 pages, mobile vs desktop split — use realistic figures for a ${businessType}
-- 1-2 sentences of interpretation after the metrics
-- Call out one positive trend and one area to improve
-- Note: "Live GA4 integration coming soon — figures shown are indicative benchmarks for this business type"
-- Keep it under 200 words
+- Open with a brief, professional note that GA4 tracking was recently installed and this section reflects ${ga4.daysWithData} day(s) of data for ${monthName}
+- Show the available real metrics in a bullet list (clearly labeled as partial-month data)
+- 1-2 sentences on what trends are emerging from the limited data
+- Close with a forward-looking sentence: what the client can expect to see once a full month of data is available
+- Do NOT fabricate or extrapolate full-month numbers
+- Keep it under 180 words
 
 Return only the markdown content, no section title.`
 
-  const executiveSummaryPrompt = ga4Block
-    ? `${context}
+  } else {
+    // Case 3: No GA4 property configured at all
+    websitePrompt = `${context}
+
+Write the website performance section of this client's monthly marketing report. Use markdown formatting.
+
+GA4 is not yet connected for this client.
+
+Requirements:
+- Open with a professional 1-2 sentence explanation that website analytics data is not yet available for ${monthName} because GA4 tracking has not been connected for this account
+- Include a brief bullet list of the key metrics that WILL be tracked once GA4 is connected: sessions, users, bounce rate, avg session duration, top pages, device breakdown
+- 1-2 sentences on why having this data matters for a ${businessType} business (be specific to their business type and goal, if known)
+- End with a clear, encouraging next step: connect GA4 in the client settings to unlock real analytics in the next report
+- Tone: professional and helpful, not apologetic — frame it as "here's what's coming"
+- Do NOT invent or estimate any traffic figures
+- Keep it under 180 words
+
+Return only the markdown content, no section title.`
+  }
+
+  // --- Executive Summary prompt ---
+  let executiveSummaryPrompt: string
+
+  if (ga4Block) {
+    executiveSummaryPrompt = `${context}
 
 ${ga4Block}
 
@@ -98,19 +136,45 @@ Requirements:
 - Do NOT use generic filler phrases like "In today's competitive landscape"
 
 Return only the markdown content, no section title.`
-    : `${context}
+
+  } else if (hasGA4Property && ga4 && !ga4.sufficientData) {
+    const partialBlock = formatGA4ForPrompt(ga4)
+    executiveSummaryPrompt = `${context}
+
+${partialBlock}
+Days with recorded sessions: ${ga4.daysWithData}
 
 Write a professional executive summary for this client's monthly marketing report. Use markdown formatting.
 
+GA4 was recently installed and only partial data is available for ${monthName}.
+
 Requirements:
 - 3 short paragraphs
-- Open with the single most important win or trend from the month
-- Second paragraph: key metrics snapshot (use **bold** for numbers, create realistic benchmark figures appropriate for a ${businessType})
-- Third paragraph: what to focus on heading into next month
-- Tone: direct, confident, written for a busy business owner
-- Do NOT use generic filler phrases like "In today's competitive landscape"
+- Open by acknowledging that ${monthName} marks the start of real analytics tracking for this business — frame it as a milestone
+- Second paragraph: reference the partial GA4 data available (${ga4.daysWithData} day(s)), mention what it shows even if limited, use **bold** for any real figures
+- Third paragraph: what to focus on heading into next month now that tracking is in place
+- Tone: forward-looking and confident
+- Do NOT fabricate full-month figures
 
 Return only the markdown content, no section title.`
+
+  } else {
+    executiveSummaryPrompt = `${context}
+
+Write a professional executive summary for this client's monthly marketing report. Use markdown formatting.
+
+GA4 is not yet connected for this client, so website analytics data is unavailable.
+
+Requirements:
+- 3 short paragraphs
+- Open with the single most important win or focus area for this business in ${monthName} (local presence, goal progress, or market opportunity — based on business type and goal)
+- Second paragraph: highlight 2-3 strategic priorities relevant to a ${businessType} business without fabricating traffic numbers — frame around what they should be measuring and why
+- Third paragraph: what to focus on heading into next month, including connecting GA4 as a concrete action item
+- Tone: direct, confident, written for a busy business owner
+- Do NOT invent traffic or analytics figures
+
+Return only the markdown content, no section title.`
+  }
 
   return [
     {
@@ -182,7 +246,7 @@ Write the recommendations section of this client's monthly marketing report. Use
 Requirements:
 - Exactly 4 numbered recommendations
 - Each recommendation: **Bold title** followed by 1-2 sentences of specific action
-- Make them concrete and actionable, not generic${ga4 ? ' — ground them in the real GA4 data where relevant' : ''}${localInsights ? ' — reference specific upcoming events or partnership opportunities where relevant' : ''}
+- Make them concrete and actionable, not generic${ga4Block ? ' — ground them in the real GA4 data where relevant' : ''}${!hasGA4Property ? '\n- Include connecting GA4 analytics as one of the recommendations' : ''}${localInsights ? ' — reference specific upcoming events or partnership opportunities where relevant' : ''}
 - Order by impact: highest impact first
 - Base them on what a ${businessType} business needs to grow local visibility and website performance
 - End with a brief encouraging closing line (not a list item)
@@ -283,6 +347,8 @@ export async function POST(request: Request) {
     }
   }
 
+  const hasGA4Property = !!client.ga4_property_id
+
   const sections = buildSections(
     client.business_name,
     client.business_type ?? 'local business',
@@ -292,7 +358,8 @@ export async function POST(request: Request) {
     client.target_audience ?? null,
     monthName,
     ga4Metrics,
-    localInsights
+    localInsights,
+    hasGA4Property
   )
 
   const encoder = new TextEncoder()

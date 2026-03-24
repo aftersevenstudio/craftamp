@@ -9,6 +9,8 @@ export interface GA4Metrics {
   pageviews: number
   topPages: { path: string; views: number }[]
   deviceBreakdown: { mobile: number; desktop: number; tablet: number }
+  daysWithData: number      // how many days in the period had at least 1 session
+  sufficientData: boolean   // true if daysWithData >= 14
 }
 
 async function refreshAccessToken(refreshToken: string): Promise<string | null> {
@@ -159,6 +161,28 @@ export async function fetchGA4Metrics(
     }
   }
 
+  // Count how many days in the period had at least 1 session
+  let daysWithData = 0
+  const daysRes = await fetch(apiUrl, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      dateRanges: [{ startDate, endDate }],
+      dimensions: [{ name: 'date' }],
+      metrics: [{ name: 'sessions' }],
+      orderBys: [{ dimension: { dimensionName: 'date' } }],
+    }),
+  })
+  if (daysRes.ok) {
+    const daysData = await daysRes.json()
+    daysWithData = (daysData.rows ?? []).filter(
+      (r: { metricValues?: { value?: string }[] }) => Number(r.metricValues?.[0]?.value ?? 0) > 0
+    ).length
+  }
+
   return {
     sessions,
     totalUsers,
@@ -168,6 +192,8 @@ export async function fetchGA4Metrics(
     pageviews,
     topPages,
     deviceBreakdown,
+    daysWithData,
+    sufficientData: daysWithData >= 14,
   }
 }
 
