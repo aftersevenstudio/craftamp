@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { resend } from '@/lib/resend'
+import { clientAcceptedInviteEmail } from '@/lib/email/client-accepted-invite'
 
 const schema = z.object({
   token: z.string().min(1),
@@ -39,7 +41,7 @@ export async function POST(request: Request) {
 
   const { data: client } = await admin
     .from('clients')
-    .select('studio_id')
+    .select('studio_id, business_name')
     .eq('id', invitation.client_id)
     .single()
 
@@ -105,6 +107,47 @@ export async function POST(request: Request) {
     .from('invitations')
     .update({ accepted_at: new Date().toISOString() })
     .eq('id', invitation.id)
+
+  // Notify the studio admin
+  if (studioId && client?.business_name) {
+    try {
+      const [{ data: studioAdmin }, { data: studio }] = await Promise.all([
+        admin
+          .from('users')
+          .select('email')
+          .eq('studio_id', studioId)
+          .eq('role', 'studio_admin')
+          .single(),
+        admin
+          .from('studios')
+          .select('slug, name')
+          .eq('id', studioId)
+          .single(),
+      ])
+
+      if (studioAdmin?.email && studio) {
+        const isProd = process.env.NODE_ENV === 'production'
+        const clientUrl = isProd
+          ? `https://app.craftamp.com/studio/dashboard/clients/${invitation.client_id}`
+          : `${process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'}/studio/dashboard/clients/${invitation.client_id}`
+
+        await resend.emails.send({
+          from: `Craftamp <${process.env.RESEND_FROM_EMAIL ?? 'onboarding@resend.dev'}>`,
+          to: studioAdmin.email,
+          subject: `${client.business_name} has accepted their portal invitation`,
+          html: clientAcceptedInviteEmail({
+            adminName: null,
+            businessName: client.business_name,
+            clientEmail: invitation.email,
+            clientUrl,
+          }),
+        })
+      }
+    } catch (err) {
+      // Non-fatal — don't block the response
+      console.error('[accept-invite] notification email failed:', err)
+    }
+  }
 
   return NextResponse.json({ ok: true })
 }
