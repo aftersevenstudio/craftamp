@@ -75,24 +75,22 @@ Requirements:
 
 Return only the markdown content, no section title.`
 
-  } else if (hasGA4Property && ga4 && !ga4.sufficientData) {
-    // Case 2: GA4 connected but not enough data yet (< 14 days)
-    const partialBlock = formatGA4ForPrompt(ga4)
+  } else if (hasGA4Property) {
+    // Case 2: GA4 property configured but insufficient or no data for the period
+    const daysWithData = ga4?.daysWithData ?? 0
+    const partialBlock = ga4 ? formatGA4ForPrompt(ga4) : null
     websitePrompt = `${context}
-
-${partialBlock}
-Days with recorded sessions: ${ga4.daysWithData} out of the full month
+${partialBlock ? `\n${partialBlock}\nDays with recorded sessions: ${daysWithData} out of the full month` : '\nNo session data was returned by GA4 for this period.'}
 
 Write the website performance section of this client's monthly marketing report. Use markdown formatting.
 
-This client's GA4 tracking was recently set up and only ${ga4.daysWithData} day(s) of data are available for ${monthName}. The figures above are real but partial.
+GA4 is connected for this client but ${daysWithData === 0 ? 'no data was recorded' : `only ${daysWithData} day(s) of data are available`} for ${monthName}.
 
 Requirements:
-- Open with a brief, professional note that GA4 tracking was recently installed and this section reflects ${ga4.daysWithData} day(s) of data for ${monthName}
-- Show the available real metrics in a bullet list (clearly labeled as partial-month data)
-- 1-2 sentences on what trends are emerging from the limited data
-- Close with a forward-looking sentence: what the client can expect to see once a full month of data is available
-- Do NOT fabricate or extrapolate full-month numbers
+- Open with a brief, professional note that GA4 is connected and ${daysWithData === 0 ? 'no data was recorded for this period — the tag may have been installed recently or there was no traffic' : `tracking captured ${daysWithData} day(s) of data for ${monthName}`}
+${partialBlock && daysWithData > 0 ? '- Show the available real metrics in a bullet list (clearly labeled as partial-month data)\n- 1-2 sentences on what trends are emerging from the limited data' : '- Note that baseline data will be available once traffic is recorded'}
+- Close with a forward-looking sentence: what the client can expect to see with a full month of data
+- Do NOT fabricate or extrapolate any traffic figures
 - Keep it under 180 words
 
 Return only the markdown content, no section title.`
@@ -137,21 +135,20 @@ Requirements:
 
 Return only the markdown content, no section title.`
 
-  } else if (hasGA4Property && ga4 && !ga4.sufficientData) {
-    const partialBlock = formatGA4ForPrompt(ga4)
+  } else if (hasGA4Property) {
+    const daysWithData = ga4?.daysWithData ?? 0
+    const partialBlock = ga4 ? formatGA4ForPrompt(ga4) : null
     executiveSummaryPrompt = `${context}
-
-${partialBlock}
-Days with recorded sessions: ${ga4.daysWithData}
+${partialBlock ? `\n${partialBlock}\nDays with recorded sessions: ${daysWithData}` : '\nNo session data was returned by GA4 for this period.'}
 
 Write a professional executive summary for this client's monthly marketing report. Use markdown formatting.
 
-GA4 was recently installed and only partial data is available for ${monthName}.
+GA4 is connected but ${daysWithData === 0 ? 'no data was recorded for this period' : `only ${daysWithData} day(s) of data are available for ${monthName}`}.
 
 Requirements:
 - 3 short paragraphs
-- Open by acknowledging that ${monthName} marks the start of real analytics tracking for this business — frame it as a milestone
-- Second paragraph: reference the partial GA4 data available (${ga4.daysWithData} day(s)), mention what it shows even if limited, use **bold** for any real figures
+- Open by acknowledging that ${monthName} marks an early stage of analytics tracking — frame it as a milestone, not a failure
+- Second paragraph: ${daysWithData > 0 && partialBlock ? `reference the partial GA4 data (${daysWithData} day(s)), mention what it shows even if limited, use **bold** for any real figures` : 'focus on strategic priorities for this business type and goal since no traffic data is available yet'}
 - Third paragraph: what to focus on heading into next month now that tracking is in place
 - Tone: forward-looking and confident
 - Do NOT fabricate full-month figures

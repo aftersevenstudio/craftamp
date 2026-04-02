@@ -99,14 +99,15 @@ export async function fetchGA4Metrics(
 
   const metricsData = await metricsRes.json()
   const row = metricsData.rows?.[0]?.metricValues
-  if (!row) return null
 
-  const sessions = Math.round(Number(row[0]?.value ?? 0))
-  const totalUsers = Math.round(Number(row[1]?.value ?? 0))
-  const newUsers = Math.round(Number(row[2]?.value ?? 0))
-  const bounceRate = Math.round(Number(row[3]?.value ?? 0) * 100)
-  const avgSessionDuration = Math.round(Number(row[4]?.value ?? 0))
-  const pageviews = Math.round(Number(row[5]?.value ?? 0))
+  // No rows means zero sessions for the period — return zero metrics rather than null
+  // so callers can distinguish "connected but no data" from "not configured"
+  const sessions = row ? Math.round(Number(row[0]?.value ?? 0)) : 0
+  const totalUsers = row ? Math.round(Number(row[1]?.value ?? 0)) : 0
+  const newUsers = row ? Math.round(Number(row[2]?.value ?? 0)) : 0
+  const bounceRate = row ? Math.round(Number(row[3]?.value ?? 0) * 100) : 0
+  const avgSessionDuration = row ? Math.round(Number(row[4]?.value ?? 0)) : 0
+  const pageviews = row ? Math.round(Number(row[5]?.value ?? 0)) : 0
 
   // Top pages report
   const pagesRes = await fetch(apiUrl, {
