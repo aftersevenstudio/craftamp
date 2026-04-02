@@ -10,7 +10,7 @@ export interface GA4Metrics {
   topPages: { path: string; views: number }[]
   deviceBreakdown: { mobile: number; desktop: number; tablet: number }
   daysWithData: number      // how many days in the period had at least 1 session
-  sufficientData: boolean   // true if daysWithData >= 14
+  sufficientData: boolean   // true if sessions > 0 AND daysWithData >= 14
 }
 
 async function refreshAccessToken(refreshToken: string): Promise<string | null> {
@@ -93,7 +93,8 @@ export async function fetchGA4Metrics(
   })
 
   if (!metricsRes.ok) {
-    console.error('[ga4] metrics fetch failed:', await metricsRes.text())
+    const errText = await metricsRes.text()
+    console.error(`[ga4] metrics fetch failed for property "${ga4PropertyId}" (status ${metricsRes.status}):`, errText)
     return null
   }
 
@@ -194,7 +195,7 @@ export async function fetchGA4Metrics(
     topPages,
     deviceBreakdown,
     daysWithData,
-    sufficientData: daysWithData >= 14,
+    sufficientData: sessions > 0 && daysWithData >= 14,
   }
 }
 

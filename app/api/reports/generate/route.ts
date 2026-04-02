@@ -52,13 +52,24 @@ function buildSections(
     `Report period: ${monthName}`,
   ].filter(Boolean).join(' | ')
 
-  const ga4Block = ga4 && ga4.sufficientData ? formatGA4ForPrompt(ga4) : null
+  // Determine GA4 state clearly
+  // ga4 === null means the API call itself failed (auth/network error)
+  // ga4.sessions === 0 means connected successfully but no traffic for the period
+  // ga4.sufficientData means sessions > 0 AND >= 14 days of data (full month)
+  // ga4.sessions > 0 && !sufficientData means partial data (recently installed)
+  const ga4State: 'full' | 'partial' | 'no_traffic' | 'error' | 'not_configured' =
+    !hasGA4Property ? 'not_configured'
+    : ga4 === null ? 'error'
+    : ga4.sufficientData ? 'full'
+    : ga4.sessions > 0 ? 'partial'
+    : 'no_traffic'
 
-  // --- Website Performance prompt: 3 distinct cases ---
+  const ga4Block = ga4State === 'full' || ga4State === 'partial' ? formatGA4ForPrompt(ga4!) : null
+
+  // --- Website Performance prompt ---
   let websitePrompt: string
 
-  if (ga4Block) {
-    // Case 1: GA4 connected with sufficient data — use real figures
+  if (ga4State === 'full') {
     websitePrompt = `${context}
 
 ${ga4Block}
@@ -75,28 +86,60 @@ Requirements:
 
 Return only the markdown content, no section title.`
 
-  } else if (hasGA4Property) {
-    // Case 2: GA4 property configured but insufficient or no data for the period
-    const daysWithData = ga4?.daysWithData ?? 0
-    const partialBlock = ga4 ? formatGA4ForPrompt(ga4) : null
+  } else if (ga4State === 'partial') {
     websitePrompt = `${context}
-${partialBlock ? `\n${partialBlock}\nDays with recorded sessions: ${daysWithData} out of the full month` : '\nNo session data was returned by GA4 for this period.'}
+
+${ga4Block}
+Days with recorded sessions: ${ga4!.daysWithData} out of the full month
 
 Write the website performance section of this client's monthly marketing report. Use markdown formatting.
 
-GA4 is connected for this client but ${daysWithData === 0 ? 'no data was recorded' : `only ${daysWithData} day(s) of data are available`} for ${monthName}.
+GA4 is connected and tracking is active, but only ${ga4!.daysWithData} day(s) of data are available for ${monthName} — the tag was likely installed partway through the month.
 
 Requirements:
-- Open with a brief, professional note that GA4 is connected and ${daysWithData === 0 ? 'no data was recorded for this period — the tag may have been installed recently or there was no traffic' : `tracking captured ${daysWithData} day(s) of data for ${monthName}`}
-${partialBlock && daysWithData > 0 ? '- Show the available real metrics in a bullet list (clearly labeled as partial-month data)\n- 1-2 sentences on what trends are emerging from the limited data' : '- Note that baseline data will be available once traffic is recorded'}
-- Close with a forward-looking sentence: what the client can expect to see with a full month of data
-- Do NOT fabricate or extrapolate any traffic figures
+- Open with a brief professional note that GA4 tracking was recently installed and this section covers ${ga4!.daysWithData} day(s) of data for ${monthName}
+- Show the available REAL metrics in a bullet list, clearly labeled as partial-month data — do not invent or extrapolate
+- 1-2 sentences on what the early data suggests
+- Close with what to expect once a full month of data is available
+- Keep it under 180 words
+
+Return only the markdown content, no section title.`
+
+  } else if (ga4State === 'no_traffic') {
+    websitePrompt = `${context}
+
+Write the website performance section of this client's monthly marketing report. Use markdown formatting.
+
+GA4 is connected and the tag is working, but no sessions were recorded for ${monthName}. This is likely because the tracking was just installed or the site had no traffic during this specific period.
+
+Requirements:
+- Open with a professional note that GA4 is connected and confirmed working, but recorded no traffic for ${monthName}
+- Briefly note what this could indicate (new installation, seasonal low, etc.)
+- List the key metrics that will populate once traffic is recorded: sessions, users, bounce rate, avg session duration, top pages, device split
+- Close with an encouraging forward-looking note about what next month's data will show
+- Do NOT invent any traffic figures
+- Keep it under 180 words
+
+Return only the markdown content, no section title.`
+
+  } else if (ga4State === 'error') {
+    websitePrompt = `${context}
+
+Write the website performance section of this client's monthly marketing report. Use markdown formatting.
+
+A GA4 property ID is configured for this client but data could not be retrieved for ${monthName}. This may be a temporary issue with the analytics connection.
+
+Requirements:
+- Open with a professional note that website analytics data is temporarily unavailable for ${monthName} due to a data retrieval issue
+- List the metrics that will be shown once the connection is restored: sessions, users, bounce rate, avg session duration, top pages, device split
+- 1-2 sentences on why tracking this data matters for a ${businessType} business
+- Do NOT invent any traffic figures
 - Keep it under 180 words
 
 Return only the markdown content, no section title.`
 
   } else {
-    // Case 3: No GA4 property configured at all
+    // not_configured
     websitePrompt = `${context}
 
 Write the website performance section of this client's monthly marketing report. Use markdown formatting.
@@ -118,7 +161,7 @@ Return only the markdown content, no section title.`
   // --- Executive Summary prompt ---
   let executiveSummaryPrompt: string
 
-  if (ga4Block) {
+  if (ga4State === 'full') {
     executiveSummaryPrompt = `${context}
 
 ${ga4Block}
@@ -135,20 +178,20 @@ Requirements:
 
 Return only the markdown content, no section title.`
 
-  } else if (hasGA4Property) {
-    const daysWithData = ga4?.daysWithData ?? 0
-    const partialBlock = ga4 ? formatGA4ForPrompt(ga4) : null
+  } else if (ga4State === 'partial') {
     executiveSummaryPrompt = `${context}
-${partialBlock ? `\n${partialBlock}\nDays with recorded sessions: ${daysWithData}` : '\nNo session data was returned by GA4 for this period.'}
+
+${ga4Block}
+Days with recorded sessions: ${ga4!.daysWithData}
 
 Write a professional executive summary for this client's monthly marketing report. Use markdown formatting.
 
-GA4 is connected but ${daysWithData === 0 ? 'no data was recorded for this period' : `only ${daysWithData} day(s) of data are available for ${monthName}`}.
+GA4 was recently installed — only ${ga4!.daysWithData} day(s) of data are available for ${monthName}.
 
 Requirements:
 - 3 short paragraphs
-- Open by acknowledging that ${monthName} marks an early stage of analytics tracking — frame it as a milestone, not a failure
-- Second paragraph: ${daysWithData > 0 && partialBlock ? `reference the partial GA4 data (${daysWithData} day(s)), mention what it shows even if limited, use **bold** for any real figures` : 'focus on strategic priorities for this business type and goal since no traffic data is available yet'}
+- Open by noting that ${monthName} marks the start of real analytics tracking — frame it as a milestone
+- Second paragraph: reference the partial GA4 data available, use **bold** for any real figures, note these are early signals
 - Third paragraph: what to focus on heading into next month now that tracking is in place
 - Tone: forward-looking and confident
 - Do NOT fabricate full-month figures
@@ -156,17 +199,18 @@ Requirements:
 Return only the markdown content, no section title.`
 
   } else {
+    // error, no_traffic, or not_configured — no real data to reference
     executiveSummaryPrompt = `${context}
 
 Write a professional executive summary for this client's monthly marketing report. Use markdown formatting.
 
-GA4 is not yet connected for this client, so website analytics data is unavailable.
+No website analytics data is available for ${monthName}${ga4State === 'not_configured' ? ' — GA4 has not been connected' : ''}.
 
 Requirements:
 - 3 short paragraphs
-- Open with the single most important win or focus area for this business in ${monthName} (local presence, goal progress, or market opportunity — based on business type and goal)
-- Second paragraph: highlight 2-3 strategic priorities relevant to a ${businessType} business without fabricating traffic numbers — frame around what they should be measuring and why
-- Third paragraph: what to focus on heading into next month, including connecting GA4 as a concrete action item
+- Open with the single most important win or focus area for this business in ${monthName} based on business type and goal — do not reference analytics
+- Second paragraph: highlight 2-3 strategic priorities for a ${businessType} business without fabricating traffic numbers
+- Third paragraph: what to focus on heading into next month${ga4State === 'not_configured' ? ', including connecting GA4 as a concrete action item' : ''}
 - Tone: direct, confident, written for a busy business owner
 - Do NOT invent traffic or analytics figures
 
