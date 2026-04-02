@@ -287,7 +287,7 @@ Write the recommendations section of this client's monthly marketing report. Use
 Requirements:
 - Exactly 4 numbered recommendations
 - Each recommendation: **Bold title** followed by 1-2 sentences of specific action
-- Make them concrete and actionable, not generic${ga4Block ? ' — ground them in the real GA4 data where relevant' : ''}${!hasGA4Property ? '\n- Include connecting GA4 analytics as one of the recommendations' : ''}${localInsights ? ' — reference specific upcoming events or partnership opportunities where relevant' : ''}
+- Make them concrete and actionable, not generic${ga4State === 'full' || ga4State === 'partial' ? ' — ground them in the real GA4 data where relevant' : ''}${ga4State === 'not_configured' ? '\n- Include connecting GA4 analytics as one of the recommendations' : ''}${localInsights ? ' — reference specific upcoming events or partnership opportunities where relevant' : ''}
 - Order by impact: highest impact first
 - Base them on what a ${businessType} business needs to grow local visibility and website performance
 - End with a brief encouraging closing line (not a list item)

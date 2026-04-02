@@ -104,7 +104,12 @@ export default async function ClientSettingsPage({ params, searchParams }: Props
               </div>
               <div className='flex items-center gap-3'>
                 {isGAConnected ? (
-                  <Badge variant='default'>Connected</Badge>
+                  <>
+                    <Badge variant='default'>Connected</Badge>
+                    <a href={`/api/auth/google?returnTo=${encodeURIComponent(returnTo)}`} className='text-xs text-gray-400 hover:text-gray-600 underline underline-offset-2'>
+                      Reconnect
+                    </a>
+                  </>
                 ) : (
                   <a href={`/api/auth/google?returnTo=${encodeURIComponent(returnTo)}`}>
                     <button className='text-sm font-medium text-white bg-gray-900 hover:bg-gray-700 px-3 py-1.5 rounded-md transition-colors'>

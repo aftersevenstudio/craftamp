@@ -44,15 +44,28 @@ export async function fetchGA4Metrics(
     .eq('provider', 'google_analytics')
     .single()
 
-  if (!integration) return null
+  if (!integration) {
+    console.error(`[ga4] no integration found for studio ${studioId}`)
+    return null
+  }
 
   // Refresh token if expired (or within 60s of expiry)
   let accessToken = integration.access_token
   const expiresAt = integration.expires_at ? new Date(integration.expires_at).getTime() : 0
-  if (Date.now() >= expiresAt - 60_000) {
-    if (!integration.refresh_token) return null
+  const needsRefresh = Date.now() >= expiresAt - 60_000
+  console.log(`[ga4] property ${ga4PropertyId} — token expires_at: ${integration.expires_at}, needs refresh: ${needsRefresh}`)
+
+  if (needsRefresh) {
+    if (!integration.refresh_token) {
+      console.error(`[ga4] no refresh token available for studio ${studioId}`)
+      return null
+    }
     const newToken = await refreshAccessToken(integration.refresh_token)
-    if (!newToken) return null
+    if (!newToken) {
+      console.error(`[ga4] token refresh failed for studio ${studioId} — the Google OAuth connection may need to be reconnected`)
+      return null
+    }
+    console.log(`[ga4] token refreshed successfully for studio ${studioId}`)
     accessToken = newToken
 
     const newExpiry = new Date(Date.now() + 3600 * 1000).toISOString()
