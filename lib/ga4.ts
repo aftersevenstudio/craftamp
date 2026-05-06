@@ -25,7 +25,11 @@ async function refreshAccessToken(refreshToken: string): Promise<string | null> 
     }),
   })
 
-  if (!res.ok) return null
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    console.error(`[ga4] refresh token request failed (${res.status}): error=${err.error}, description=${err.error_description}`)
+    return null
+  }
   const data = await res.json()
   return data.access_token ?? null
 }

@@ -198,21 +198,61 @@ Requirements:
 
 Return only the markdown content, no section title.`
 
-  } else {
-    // error, no_traffic, or not_configured — no real data to reference
+  } else if (ga4State === 'no_traffic') {
     executiveSummaryPrompt = `${context}
 
 Write a professional executive summary for this client's monthly marketing report. Use markdown formatting.
 
-No website analytics data is available for ${monthName}${ga4State === 'not_configured' ? ' — GA4 has not been connected' : ''}.
+GA4 is connected and confirmed working, but no sessions were recorded for ${monthName}.
+
+Facts you may reference: business name, business type, city, primary goal, report period. Do not invent any performance claims, wins, or metrics beyond these.
 
 Requirements:
 - 3 short paragraphs
-- Open with the single most important win or focus area for this business in ${monthName} based on business type and goal — do not reference analytics
-- Second paragraph: highlight 2-3 strategic priorities for a ${businessType} business without fabricating traffic numbers
-- Third paragraph: what to focus on heading into next month${ga4State === 'not_configured' ? ', including connecting GA4 as a concrete action item' : ''}
-- Tone: direct, confident, written for a busy business owner
-- Do NOT invent traffic or analytics figures
+- First paragraph: note that GA4 is live and tracking is confirmed active — this is the foundation for data-driven decisions going forward
+- Second paragraph: briefly explain what this report covers (local market opportunities and strategic recommendations tailored to their business type and goal)
+- Third paragraph: forward-looking — what having a full month of traffic data in the next report will unlock
+- Tone: professional and encouraging — this is a setup month, not a failure
+- Do NOT fabricate any traffic figures, session counts, or performance assessments
+
+Return only the markdown content, no section title.`
+
+  } else if (ga4State === 'error') {
+    executiveSummaryPrompt = `${context}
+
+Write a professional executive summary for this client's monthly marketing report. Use markdown formatting.
+
+A GA4 property is configured for this client but analytics data could not be retrieved for ${monthName} due to a connection issue.
+
+Facts you may reference: business name, business type, city, primary goal, report period. Do not invent any performance claims, wins, or metrics beyond these.
+
+Requirements:
+- 3 short paragraphs
+- First paragraph: acknowledge that website analytics are temporarily unavailable for ${monthName} — keep this brief and non-alarming
+- Second paragraph: explain what this report still delivers (local market opportunities and strategic recommendations grounded in their business type and goal)
+- Third paragraph: once the analytics connection is restored, explain what data will be available and why it matters for this type of business
+- Tone: calm, professional, informative — not apologetic
+- Do NOT fabricate any traffic figures, session counts, or performance assessments
+
+Return only the markdown content, no section title.`
+
+  } else {
+    // not_configured — null GA4 property ID means no website / no analytics for this client
+    executiveSummaryPrompt = `${context}
+
+Write a professional executive summary for this client's monthly marketing report. Use markdown formatting.
+
+No website or analytics data is associated with this client. Do not invent any website metrics, traffic figures, or performance claims.
+
+Facts you may reference: business name, business type, city, primary goal, report period.
+
+Requirements:
+- 3 short paragraphs
+- First paragraph: open by orienting the client to what this report is — a monthly snapshot of their local market landscape and strategic opportunities, grounded in real local data
+- Second paragraph: explain specifically what the report covers: local events they can leverage, partnership opportunities, and tailored recommendations for a ${businessType} business${city ? ` in ${city}` : ''} focused on ${goalLabel ?? 'growth'}
+- Third paragraph: explain the value of connecting website analytics in future reports — specifically what metrics would be tracked (sessions, users, bounce rate, top pages, device breakdown) and how that data would sharpen every recommendation
+- Tone: informative, warm, and forward-looking — written for a business owner who is just getting started
+- Do NOT fabricate any business performance statements, wins, or strategic assessments
 
 Return only the markdown content, no section title.`
   }
