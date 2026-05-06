@@ -100,6 +100,13 @@ export default async function ClientSettingsPage({ params, searchParams }: Props
                       ? 'Connected — pulls real GA4 data into reports'
                       : 'Connect once for all clients in your studio'}
                   </p>
+                  {isGAConnected && (
+                    <p className='text-xs text-gray-400 mt-0.5'>
+                      {client.ga4_property_id
+                        ? `Property ID: ${client.ga4_property_id}`
+                        : 'No GA4 property configured — reports will reflect no website data'}
+                    </p>
+                  )}
                 </div>
               </div>
               <div className='flex items-center gap-3'>

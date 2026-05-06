@@ -237,7 +237,7 @@ export default function EditClientForm({ client }: { client: Client }) {
                 onChange={(e) => setGa4PropertyId(e.target.value)}
               />
               <p className='text-xs text-gray-400'>
-                Found in GA4 → Admin → Property Settings → Property ID. Numbers only, no "properties/" prefix.
+                Found in GA4 → Admin → Property Settings → Property ID. Numbers only, no &ldquo;properties/&rdquo; prefix. Leave blank if this client has no website.
               </p>
             </div>
           </fieldset>

@@ -5,17 +5,17 @@ import { createAdminClient } from '@/lib/supabase/admin'
 
 const schema = z.object({
   business_name: z.string().min(1).optional(),
-  business_type: z.string().optional(),
-  city: z.string().optional(),
-  description: z.string().optional(),
-  primary_goal: z.string().optional(),
-  target_audience: z.string().optional(),
+  business_type: z.string().nullable().optional(),
+  city: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
+  primary_goal: z.string().nullable().optional(),
+  target_audience: z.string().nullable().optional(),
   timezone: z.string().optional(),
-  contact_name: z.string().optional(),
-  contact_email: z.string().email().optional(),
-  contact_phone: z.string().optional(),
-  ga4_property_id: z.string().optional(),
-  gbp_location_id: z.string().optional(),
+  contact_name: z.string().nullable().optional(),
+  contact_email: z.string().email().nullable().optional(),
+  contact_phone: z.string().nullable().optional(),
+  ga4_property_id: z.string().nullable().optional(),
+  gbp_location_id: z.string().nullable().optional(),
 })
 
 async function getStudioId(userId: string) {

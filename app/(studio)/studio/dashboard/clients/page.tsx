@@ -82,9 +82,9 @@ export default async function ClientsPage() {
                         </p>
                       </div>
                       <div className='flex items-center gap-2'>
-                        {client.ga4_property_id && (
-                          <span className='text-xs text-gray-400'>GA4 ✓</span>
-                        )}
+                        <span className='text-xs text-gray-400'>
+                          {client.ga4_property_id ? 'GA4 ✓' : 'No website'}
+                        </span>
                         <Badge variant={status === 'active' ? 'default' : 'secondary'}>
                           {status}
                         </Badge>
